@@ -1,0 +1,41 @@
+documents:
+  - id: k8s-configmaps
+    title: ConfigMaps
+    upstream_id: kubernetes-website
+    collection_ids:
+      - configuration-boundary
+    category: configuration
+    priority: p0
+    language: en
+    docs_version: "TODO: e.g. v1.34"
+    imported_commit: "TODO"
+    imported_at: "TODO"
+    source_url: https://kubernetes.io/docs/concepts/configuration/configmap/
+    upstream_repo_path: content/en/docs/concepts/configuration/configmap.md
+    local_path: docs_source/kubernetes/concepts/configuration/configmap.md
+    tags:
+      - configmap
+      - configuration
+      - environment
+    reason: ConfigMaps explain non-sensitive configuration patterns and boundaries.
+
+  - id: k8s-secrets
+    title: Secrets
+    upstream_id: kubernetes-website
+    collection_ids:
+      - configuration-boundary
+    category: configuration
+    priority: p0
+    language: en
+    docs_version: "TODO: e.g. v1.34"
+    imported_commit: "TODO"
+    imported_at: "TODO"
+    source_url: https://kubernetes.io/docs/concepts/configuration/secret/
+    upstream_repo_path: content/en/docs/concepts/configuration/secret.md
+    local_path: docs_source/kubernetes/concepts/configuration/secret.md
+    tags:
+      - secret
+      - sensitive-data
+      - configuration
+      - safety
+    reason: Secrets are needed for safe answers about sensitive configuration and assistant boundaries.

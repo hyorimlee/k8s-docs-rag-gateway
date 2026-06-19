@@ -1,0 +1,53 @@
+collections:
+  - id: workload-basics
+    title: Workload Basics
+    purpose: Explain core Kubernetes workload resources and their expected behavior.
+    target_questions:
+      - What is a Pod?
+      - What is the difference between a Job, CronJob, and Deployment?
+      - Which workload resource should I use for batch or long-running work?
+    document_groups:
+      - kubernetes-workloads
+
+  - id: pod-pending-troubleshooting
+    title: Pod Pending Troubleshooting
+    purpose: Support safe, documentation-grounded troubleshooting for Pods that remain Pending.
+    target_questions:
+      - Why is my Pod stuck in Pending?
+      - What scheduling constraints should I check first?
+      - How can resource requests, affinity, taints, or tolerations affect scheduling?
+    document_groups:
+      - kubernetes-workloads
+      - kubernetes-scheduling
+      - custom-runbooks
+
+  - id: batch-and-backfill
+    title: Batch and Backfill
+    purpose: Explain Jobs and CronJobs and support safe backfill planning.
+    target_questions:
+      - What is the difference between a Job and a CronJob?
+      - What should I check before triggering a backfill?
+      - How can CronJob concurrency policy affect repeated runs?
+    document_groups:
+      - kubernetes-workloads
+      - custom-runbooks
+
+  - id: configuration-boundary
+    title: Configuration Boundary
+    purpose: Explain the boundary between non-sensitive configuration and sensitive data.
+    target_questions:
+      - When should I use a ConfigMap?
+      - When should I use a Secret?
+      - What should the assistant avoid exposing or inventing when discussing Secrets?
+    document_groups:
+      - kubernetes-configuration
+
+  - id: autoscaling-basics
+    title: Autoscaling Basics
+    purpose: Explain the basics of Horizontal Pod Autoscaling for documentation-grounded answers.
+    target_questions:
+      - What does a HorizontalPodAutoscaler do?
+      - What metrics can autoscaling use?
+      - How does autoscaling relate to workload capacity?
+    document_groups:
+      - kubernetes-autoscaling

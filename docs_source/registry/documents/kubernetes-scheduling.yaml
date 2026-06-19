@@ -1,0 +1,64 @@
+documents:
+  - id: k8s-assign-pods-to-nodes
+    title: Assigning Pods to Nodes
+    upstream_id: kubernetes-website
+    collection_ids:
+      - pod-pending-troubleshooting
+    category: scheduling
+    priority: p0
+    language: en
+    docs_version: "TODO: e.g. v1.34"
+    imported_commit: "TODO"
+    imported_at: "TODO"
+    source_url: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
+    upstream_repo_path: content/en/docs/concepts/scheduling-eviction/assign-pod-node.md
+    local_path: docs_source/kubernetes/concepts/scheduling-eviction/assign-pod-node.md
+    tags:
+      - scheduling
+      - node-selector
+      - affinity
+      - pod-pending
+    reason: Node assignment rules are essential for explaining why Pods may not be scheduled.
+
+  - id: k8s-taints-and-tolerations
+    title: Taints and Tolerations
+    upstream_id: kubernetes-website
+    collection_ids:
+      - pod-pending-troubleshooting
+    category: scheduling
+    priority: p0
+    language: en
+    docs_version: "TODO: e.g. v1.34"
+    imported_commit: "TODO"
+    imported_at: "TODO"
+    source_url: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+    upstream_repo_path: content/en/docs/concepts/scheduling-eviction/taint-and-toleration.md
+    local_path: docs_source/kubernetes/concepts/scheduling-eviction/taint-and-toleration.md
+    tags:
+      - scheduling
+      - taints
+      - tolerations
+      - pod-pending
+    reason: Taints and tolerations are common scheduling constraints involved in Pending Pods.
+
+  - id: k8s-resource-management
+    title: Resource Management for Pods and Containers
+    upstream_id: kubernetes-website
+    collection_ids:
+      - pod-pending-troubleshooting
+    category: scheduling
+    priority: p0
+    language: en
+    docs_version: "TODO: e.g. v1.34"
+    imported_commit: "TODO"
+    imported_at: "TODO"
+    source_url: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+    upstream_repo_path: content/en/docs/concepts/configuration/manage-resources-containers.md
+    local_path: docs_source/kubernetes/concepts/configuration/manage-resources-containers.md
+    tags:
+      - resources
+      - requests
+      - limits
+      - scheduling
+      - pod-pending
+    reason: Resource requests and limits affect scheduling and are important for Pending Pod triage.
