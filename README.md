@@ -6,9 +6,9 @@ This is a personal portfolio project. It is not an official Kubernetes project a
 
 ## Current Status
 
-This repository currently has the documentation/source-registry foundation and a minimal FastAPI skeleton with `GET /health`.
+This repository currently has the documentation/source-registry foundation, a minimal FastAPI skeleton with `GET /health`, and a GitHub Actions CI workflow for pytest and ruff checks.
 
-No `/chat` endpoint, retrieval pipeline, LLM provider, Docker image, Kubernetes manifests, or CI workflow has been implemented yet.
+No `/chat` endpoint, retrieval pipeline, LLM provider, Docker image, Kubernetes manifests, deployment workflow, tracing, or eval runner has been implemented yet.
 
 ## Planned Project
 
@@ -84,11 +84,11 @@ The goal is to demonstrate backend and platform concerns around LLM features, no
 
 ### Phase 7: Deployment and CI
 
+* [x] GitHub Actions workflow for pytest and ruff checks
 * [ ] Dockerfile
 * [ ] Kubernetes Deployment and Service manifests
 * [ ] ConfigMap and secret example
-* [ ] GitHub Actions workflow
-* [ ] test, lint, and optional Docker build checks
+* [ ] optional Docker build checks
 
 ## Local Development
 
