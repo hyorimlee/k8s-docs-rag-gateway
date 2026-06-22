@@ -6,9 +6,9 @@ This is a personal portfolio project. It is not an official Kubernetes project a
 
 ## Current Status
 
-This repository currently has the documentation/source-registry foundation, a minimal FastAPI skeleton with `GET /health`, Docker build support for the current app, and a GitHub Actions CI workflow for pytest, ruff checks, and Docker image build verification.
+This repository currently has the documentation/source-registry foundation, a minimal FastAPI skeleton with `GET /health`, Docker build support for the current app, Kubernetes manifest examples for the current app, and a GitHub Actions CI workflow for pytest, ruff checks, Docker image build verification, and Kubernetes manifest validation.
 
-No `/chat` endpoint, retrieval pipeline, LLM provider, Kubernetes manifests, image publishing, deployment workflow, tracing, or eval runner has been implemented yet.
+No `/chat` endpoint, retrieval pipeline, LLM provider, image publishing, deployment workflow, tracing, or eval runner has been implemented yet.
 
 ## Planned Project
 
@@ -87,8 +87,9 @@ The goal is to demonstrate backend and platform concerns around LLM features, no
 * [x] GitHub Actions workflow for pytest and ruff checks
 * [x] Dockerfile for the minimal FastAPI app
 * [x] Docker build check in CI
-* [ ] Kubernetes Deployment and Service manifests
-* [ ] ConfigMap and secret example
+* [x] Kubernetes Deployment and Service manifests
+* [x] ConfigMap and secret example
+* [x] Kubernetes manifest validation in CI
 * [ ] optional image publishing workflow
 
 ## Local Development
@@ -143,6 +144,20 @@ Then check the health endpoint:
 ```bash
 curl http://127.0.0.1:8000/health
 ```
+
+## Kubernetes Manifests
+
+The `k8s/` directory contains deployment-ready example manifests for running the current minimal FastAPI app and its `GET /health` endpoint. CI validates these manifests with kubeconform, but does not apply them to a cluster.
+
+Apply the non-secret manifests with:
+
+```bash
+kubectl apply -f k8s/configmap.yaml
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/service.yaml
+```
+
+`k8s/secret.example.yaml` is an example only. Do not put real secrets in that file or commit real secrets to the repository.
 
 ## Documentation Sources and Attribution
 
