@@ -6,9 +6,9 @@ This is a personal portfolio project. It is not an official Kubernetes project a
 
 ## Current Status
 
-This repository currently has the documentation/source-registry foundation, a minimal FastAPI skeleton with `GET /health`, Docker build support for the current app, Kubernetes manifest examples for the current app, and a GitHub Actions CI workflow for pytest, ruff checks, Docker image build verification, and Kubernetes manifest validation.
+This repository currently has the documentation/source-registry foundation, a minimal FastAPI app with `GET /health` and a mock `POST /chat`, Docker build support for the current app, Kubernetes manifest examples for the current app, and a GitHub Actions CI workflow for pytest, ruff checks, Docker image build verification, and Kubernetes manifest validation.
 
-No `/chat` endpoint, retrieval pipeline, LLM provider, image publishing, deployment workflow, tracing, or eval runner has been implemented yet.
+The `POST /chat` endpoint currently returns a deterministic mock response only. Retrieval, prompt building, an LLM provider, a trace store, image publishing, deployment workflow, and eval runner have not been implemented yet.
 
 ## Planned Project
 
@@ -51,11 +51,11 @@ The goal is to demonstrate backend and platform concerns around LLM features, no
 
 ### Phase 3: Chat Contract
 
-* [ ] `POST /chat`
-* [ ] request and response schemas
-* [ ] request ID generation
-* [ ] mock response
-* [ ] latency and token usage fields
+* [x] `POST /chat`
+* [x] request and response schemas
+* [x] request ID generation
+* [x] mock response
+* [x] latency and token usage fields
 
 ### Phase 4: Documentation Retrieval
 
@@ -131,6 +131,16 @@ Check the health endpoint:
 ```bash
 curl http://127.0.0.1:8000/health
 ```
+
+Call the mock chat endpoint:
+
+```bash
+curl -X POST http://127.0.0.1:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message":"How do I check pod status?"}'
+```
+
+The response is deterministic mock data. It does not retrieve Kubernetes documentation, build prompts, call an LLM, inspect clusters, store traces, or run evaluation.
 
 Build and run the Docker image for the current minimal FastAPI app:
 
