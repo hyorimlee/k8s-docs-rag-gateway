@@ -32,3 +32,6 @@ jobs:
 
       - name: Check ruff formatting
         run: ruff format --check .
+
+      - name: Build Docker image
+        run: docker build -t k8s-docs-rag-gateway:ci .

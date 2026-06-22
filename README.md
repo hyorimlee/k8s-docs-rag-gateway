@@ -6,9 +6,9 @@ This is a personal portfolio project. It is not an official Kubernetes project a
 
 ## Current Status
 
-This repository currently has the documentation/source-registry foundation, a minimal FastAPI skeleton with `GET /health`, and a GitHub Actions CI workflow for pytest and ruff checks.
+This repository currently has the documentation/source-registry foundation, a minimal FastAPI skeleton with `GET /health`, Docker build support for the current app, and a GitHub Actions CI workflow for pytest, ruff checks, and Docker image build verification.
 
-No `/chat` endpoint, retrieval pipeline, LLM provider, Docker image, Kubernetes manifests, deployment workflow, tracing, or eval runner has been implemented yet.
+No `/chat` endpoint, retrieval pipeline, LLM provider, Kubernetes manifests, image publishing, deployment workflow, tracing, or eval runner has been implemented yet.
 
 ## Planned Project
 
@@ -85,10 +85,11 @@ The goal is to demonstrate backend and platform concerns around LLM features, no
 ### Phase 7: Deployment and CI
 
 * [x] GitHub Actions workflow for pytest and ruff checks
-* [ ] Dockerfile
+* [x] Dockerfile for the minimal FastAPI app
+* [x] Docker build check in CI
 * [ ] Kubernetes Deployment and Service manifests
 * [ ] ConfigMap and secret example
-* [ ] optional Docker build checks
+* [ ] optional image publishing workflow
 
 ## Local Development
 
@@ -125,6 +126,19 @@ uvicorn app.main:app --reload
 ```
 
 Check the health endpoint:
+
+```bash
+curl http://127.0.0.1:8000/health
+```
+
+Build and run the Docker image for the current minimal FastAPI app:
+
+```bash
+docker build -t k8s-docs-rag-gateway:local .
+docker run --rm -p 8000:8000 k8s-docs-rag-gateway:local
+```
+
+Then check the health endpoint:
 
 ```bash
 curl http://127.0.0.1:8000/health
