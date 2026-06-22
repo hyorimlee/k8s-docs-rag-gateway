@@ -6,9 +6,9 @@ This is a personal portfolio project. It is not an official Kubernetes project a
 
 ## Current Status
 
-This repository currently has the documentation/source-registry foundation, local Markdown ingestion with heading-aware chunking to a JSONL artifact, simple local chunk retrieval using keyword overlap and metadata boosts, an internal prompt builder that formats retrieved chunks with assistant boundary rules, a minimal FastAPI app with `GET /health` and a mock `POST /chat`, Docker build support for the current app, Kubernetes manifest examples for the current app, and a GitHub Actions CI workflow for pytest, ruff checks, Docker image build verification, and Kubernetes manifest validation.
+This repository currently has the documentation/source-registry foundation, local Markdown ingestion with heading-aware chunking to a JSONL artifact, simple local chunk retrieval using keyword overlap and metadata boosts, an internal prompt builder that formats retrieved chunks with assistant boundary rules, an LLM provider interface with a deterministic mock provider, a minimal FastAPI app with `GET /health` and a mock `POST /chat`, Docker build support for the current app, Kubernetes manifest examples for the current app, and a GitHub Actions CI workflow for pytest, ruff checks, Docker image build verification, and Kubernetes manifest validation.
 
-The `POST /chat` endpoint currently returns a deterministic mock response only and does not use retrieval or the prompt builder yet. Embeddings, a vector database, an LLM provider, a trace store, image publishing, deployment workflow, and eval runner have not been implemented yet.
+The `POST /chat` endpoint currently returns a deterministic mock response only and does not use retrieval, the prompt builder, or the provider interface yet. Embeddings, a vector database, a real LLM provider, a trace store, image publishing, deployment workflow, and eval runner have not been implemented yet.
 
 ## Planned Project
 
@@ -68,7 +68,7 @@ The goal is to demonstrate backend and platform concerns around LLM features, no
 ### Phase 5: Gateway Reliability
 
 * [x] prompt builder
-* [ ] mock LLM provider abstraction
+* [x] mock LLM provider abstraction
 * [ ] optional real LLM provider
 * [ ] model-call timeout
 * [ ] safe fallback response
@@ -150,6 +150,14 @@ python scripts/build_prompt.py "pod pending scheduling"
 
 The prompt builder formats retrieved chunk metadata and content with assistant boundary rules for a future LLM provider. It does not call an LLM, and `/chat` still does not use retrieval or prompt building.
 
+Run the deterministic mock provider manually:
+
+```bash
+python scripts/mock_generate.py "example prompt"
+```
+
+The provider interface accepts a prompt and returns a model-like response with simple estimated token usage. The mock provider does not call an external API, and no real LLM provider SDK or API key is configured.
+
 Run the FastAPI server locally:
 
 ```bash
@@ -170,7 +178,7 @@ curl -X POST http://127.0.0.1:8000/chat \
   -d '{"message":"How do I check pod status?"}'
 ```
 
-The response is deterministic mock data. It does not retrieve Kubernetes documentation, use embeddings or a vector database, build prompts, call an LLM, inspect clusters, store traces, or run evaluation.
+The response is deterministic mock data. It does not retrieve Kubernetes documentation, use embeddings or a vector database, build prompts, use the provider interface, call an external LLM, inspect clusters, store traces, or run evaluation.
 
 Build and run the Docker image for the current minimal FastAPI app:
 
