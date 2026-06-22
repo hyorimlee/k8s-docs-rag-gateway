@@ -6,9 +6,9 @@ This is a personal portfolio project. It is not an official Kubernetes project a
 
 ## Current Status
 
-This repository currently has the documentation/source-registry foundation, local Markdown ingestion with heading-aware chunking to a JSONL artifact, a minimal FastAPI app with `GET /health` and a mock `POST /chat`, Docker build support for the current app, Kubernetes manifest examples for the current app, and a GitHub Actions CI workflow for pytest, ruff checks, Docker image build verification, and Kubernetes manifest validation.
+This repository currently has the documentation/source-registry foundation, local Markdown ingestion with heading-aware chunking to a JSONL artifact, simple local chunk retrieval using keyword overlap and metadata boosts, a minimal FastAPI app with `GET /health` and a mock `POST /chat`, Docker build support for the current app, Kubernetes manifest examples for the current app, and a GitHub Actions CI workflow for pytest, ruff checks, Docker image build verification, and Kubernetes manifest validation.
 
-The `POST /chat` endpoint currently returns a deterministic mock response only. Retrieval, embeddings, a vector database, prompt building, an LLM provider, a trace store, image publishing, deployment workflow, and eval runner have not been implemented yet.
+The `POST /chat` endpoint currently returns a deterministic mock response only and does not use retrieval yet. Embeddings, a vector database, prompt building, an LLM provider, a trace store, image publishing, deployment workflow, and eval runner have not been implemented yet.
 
 ## Planned Project
 
@@ -62,7 +62,7 @@ The goal is to demonstrate backend and platform concerns around LLM features, no
 * [ ] import selected Kubernetes documentation from the registered upstream
 * [x] Markdown document loading
 * [x] heading-aware chunking
-* [ ] lightweight local retrieval
+* [x] lightweight local retrieval
 * [ ] source metadata in responses
 
 ### Phase 5: Gateway Reliability
@@ -133,6 +133,14 @@ artifacts/chunks.jsonl
 ```
 
 Many registered upstream Kubernetes documentation files are placeholders and have not been downloaded yet, so the ingestion summary may report missing local documents. The generated chunks are not used by `/chat` yet.
+
+Run simple local chunk retrieval after ingestion:
+
+```bash
+python scripts/retrieve_chunks.py "pod pending scheduling"
+```
+
+Retrieval loads `artifacts/chunks.jsonl`, scores chunks with lowercase keyword overlap, and applies simple boosts for heading/title and tag matches. It does not use embeddings, a vector database, a prompt builder, or an LLM provider, and `/chat` still does not use retrieved chunks.
 
 Run the FastAPI server locally:
 
