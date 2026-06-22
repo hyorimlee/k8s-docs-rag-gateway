@@ -6,9 +6,9 @@ This is a personal portfolio project. It is not an official Kubernetes project a
 
 ## Current Status
 
-This repository currently has the documentation/source-registry foundation, a minimal FastAPI app with `GET /health` and a mock `POST /chat`, Docker build support for the current app, Kubernetes manifest examples for the current app, and a GitHub Actions CI workflow for pytest, ruff checks, Docker image build verification, and Kubernetes manifest validation.
+This repository currently has the documentation/source-registry foundation, local Markdown ingestion with heading-aware chunking to a JSONL artifact, a minimal FastAPI app with `GET /health` and a mock `POST /chat`, Docker build support for the current app, Kubernetes manifest examples for the current app, and a GitHub Actions CI workflow for pytest, ruff checks, Docker image build verification, and Kubernetes manifest validation.
 
-The `POST /chat` endpoint currently returns a deterministic mock response only. Retrieval, prompt building, an LLM provider, a trace store, image publishing, deployment workflow, and eval runner have not been implemented yet.
+The `POST /chat` endpoint currently returns a deterministic mock response only. Retrieval, embeddings, a vector database, prompt building, an LLM provider, a trace store, image publishing, deployment workflow, and eval runner have not been implemented yet.
 
 ## Planned Project
 
@@ -60,8 +60,8 @@ The goal is to demonstrate backend and platform concerns around LLM features, no
 ### Phase 4: Documentation Retrieval
 
 * [ ] import selected Kubernetes documentation from the registered upstream
-* [ ] Markdown document loading
-* [ ] heading-aware chunking
+* [x] Markdown document loading
+* [x] heading-aware chunking
 * [ ] lightweight local retrieval
 * [ ] source metadata in responses
 
@@ -120,6 +120,20 @@ ruff check .
 ruff format --check .
 ```
 
+Run local documentation ingestion:
+
+```bash
+python scripts/ingest_docs.py
+```
+
+The ingestion script reads local Markdown files referenced by the source registry and writes heading-based chunk metadata to:
+
+```text
+artifacts/chunks.jsonl
+```
+
+Many registered upstream Kubernetes documentation files are placeholders and have not been downloaded yet, so the ingestion summary may report missing local documents. The generated chunks are not used by `/chat` yet.
+
 Run the FastAPI server locally:
 
 ```bash
@@ -140,7 +154,7 @@ curl -X POST http://127.0.0.1:8000/chat \
   -d '{"message":"How do I check pod status?"}'
 ```
 
-The response is deterministic mock data. It does not retrieve Kubernetes documentation, build prompts, call an LLM, inspect clusters, store traces, or run evaluation.
+The response is deterministic mock data. It does not retrieve Kubernetes documentation, use embeddings or a vector database, build prompts, call an LLM, inspect clusters, store traces, or run evaluation.
 
 Build and run the Docker image for the current minimal FastAPI app:
 
