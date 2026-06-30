@@ -4,13 +4,30 @@ Kubernetes Docs RAG Gateway is intended to become a small, production-minded Fas
 
 This is a personal portfolio project, not an official Kubernetes project. It is not affiliated with, endorsed by, or sponsored by Kubernetes, CNCF, or The Kubernetes Authors.
 
-This document describes the long-term design target. It is not a statement that these components already exist. The repository is currently in the documentation and source-registry foundation stage.
+This document describes the long-term direction. It also calls out what exists today so future goals do not sound already implemented.
+
+## Current Implementation
+
+The repository currently includes a local deterministic mock RAG-style flow:
+
+* local Markdown ingestion and heading-based chunking
+* JSONL chunk artifact generation
+* simple keyword retrieval with metadata boosts
+* prompt builder with assistant boundary rules
+* provider interface and deterministic mock provider
+* FastAPI `GET /health`, `POST /chat`, and `GET /traces/{request_id}`
+* safe fallback/error metadata for expected internal failures
+* in-memory trace storage
+* local deterministic behavioral eval
+* Dockerfile, Kubernetes manifest examples, and CI validation
+
+The current system does not use a real LLM provider, embeddings, a vector database, persistent trace storage, full Kubernetes upstream documentation, or deployment/CD automation.
 
 ## Design Intent
 
 The project is meant to show how an LLM feature can be wrapped in a service layer that handles reliability, observability, evaluation, and source attribution. Kubernetes documentation is the example domain because it has clear concepts, common troubleshooting questions, and strong attribution requirements.
 
-The assistant should remain read-only, versioned, and documentation-grounded. It should answer from a selected Kubernetes documentation version or pinned upstream `kubernetes/website` commit, while making clear that it cannot inspect or modify a real cluster.
+The assistant should remain read-only, versioned, and documentation-grounded. It should answer from selected Kubernetes documentation sources while making clear that it cannot inspect or modify a real cluster.
 
 ## Intended Architecture
 
@@ -24,15 +41,18 @@ FastAPI /chat
 Request validation
   |
   v
-Kubernetes docs retriever
+Documentation chunk loader
+  |
+  v
+Retriever
   |
   v
 Prompt builder
   |
   v
-LLM provider
-  |-- mock provider for local development and CI
-  |-- optional real provider for experiments
+LLM provider interface
+  |-- deterministic mock provider today
+  |-- optional real provider later
   |
   v
 Timeout and fallback handler
@@ -41,52 +61,48 @@ Timeout and fallback handler
 Response builder
   |
   v
-Trace store and metrics
+Trace store and eval feedback
 ```
 
-## Planned Components
-
-### FastAPI `/chat`
-
-The future `/chat` endpoint should accept a user question, validate request fields, retrieve relevant documentation chunks, call a provider, and return an answer with source metadata.
+## Long-Term Components
 
 ### Versioned Kubernetes Docs Retrieval
 
-The retrieval layer should use a curated subset of Kubernetes documentation rather than mirroring the entire upstream site at first. Each imported document should be traceable to a documentation version, upstream commit, import timestamp, upstream path, source URL, and local path.
+The retrieval layer should use a curated subset of Kubernetes documentation before expanding. Each imported document should be traceable to a documentation version, upstream commit, import timestamp, upstream path, source URL, and local path.
 
-The first retrieval implementation can be local and lightweight, then evolve toward BM25, embeddings, or hybrid retrieval. Later versions can expand from curated sources to topic-based source sets and eventually full English `content/en/docs` ingestion.
+The current retrieval implementation is simple keyword scoring. Later versions may add BM25, embeddings, hybrid retrieval, or reranking after deterministic baseline tests exist.
 
 ### Prompt Builder
 
-The prompt builder should combine assistant boundaries, retrieved context, source-grounding rules, and the user question. It should instruct the assistant to say when retrieved context is insufficient.
+The prompt builder should combine assistant boundaries, retrieved context, source-grounding rules, and the user question. It should instruct the assistant to say when retrieved context is insufficient and avoid inventing live cluster state.
+
+This component is implemented today, but it is still paired with a deterministic mock provider.
 
 ### Mock and Optional Real LLM Provider
 
-A mock provider should support deterministic local development and CI. A real provider may be added later as an optional integration, with secrets kept out of the repository.
+The mock provider supports deterministic local development and CI. A real provider may be added later as an optional integration, with secrets kept out of the repository.
+
+Real provider integration is not implemented today.
 
 ### Timeout and Fallback
 
-Model calls should have a timeout budget. If retrieval is empty, the provider fails, or the provider times out, the service should return a safe fallback instead of hanging or hallucinating.
+The service should return safe fallback responses instead of hanging or crashing when expected internal failures occur. The current implementation includes fallback/error metadata and a simple provider timeout boundary.
 
-### Latency and Token Usage Tracking
+### Tracing and Observability
 
-Responses should include latency and token usage metadata when available. Mock providers may estimate token usage, while real providers may return provider-reported usage.
+Trace records should help debug what context was retrieved, what prompt was built, what response was returned, and whether fallback behavior occurred.
 
-### Trace Store
-
-The trace store should record request ID, question, retrieved chunks, prompt, model response, final answer, sources, latency, token usage, fallback status, and error type. A local JSONL or SQLite store is enough for early versions.
+The current trace store is in-memory only. Future versions may add persistent traces and richer metrics.
 
 ### Behavioral Evaluation
 
-Behavioral evals should check whether answers are grounded, cite sources, avoid claiming live cluster access, avoid leaking or inventing secrets, and give safe troubleshooting guidance.
+Behavioral evals should check grounding mechanics, source presence, live-cluster boundaries, secret handling, safe troubleshooting guidance, and insufficient-context behavior.
 
-### Docker and Kubernetes Deployment
+The current eval runner is deterministic and local. It validates response fields and trace/prompt content, not real LLM answer quality.
 
-Later milestones should add a Dockerfile and Kubernetes manifests for a Deployment, Service, ConfigMap, and example Secret. These are deployment demonstrations for the portfolio project, not official Kubernetes artifacts.
+### Docker, Kubernetes, and CI
 
-### CI
-
-CI should eventually run tests, linting, formatting checks, and optional Docker build or manifest validation checks. CI should use the mock provider only.
+The project includes Docker and Kubernetes manifest examples plus CI checks. Future work may add image publishing and deployment/CD, but those are not implemented today.
 
 ## Long-Term Outcome
 

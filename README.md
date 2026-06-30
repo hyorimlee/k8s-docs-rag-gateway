@@ -1,28 +1,65 @@
 # Kubernetes Docs RAG Gateway
 
-Kubernetes Docs RAG Gateway is a planned FastAPI-based, versioned documentation assistant gateway for experimenting with retrieval-augmented generation over selected Kubernetes documentation.
+Kubernetes Docs RAG Gateway is a FastAPI-based mock RAG service gateway over versioned Kubernetes documentation sources. It is currently deterministic and local: it uses generated JSONL chunks, simple keyword retrieval, a prompt builder, and a `MockLLMProvider` instead of real LLM generation.
 
 This is a personal portfolio project. It is not an official Kubernetes project and is not affiliated with, endorsed by, or sponsored by Kubernetes, CNCF, or The Kubernetes Authors.
 
 ## Current Status
 
-This repository currently has the documentation/source-registry foundation, local Markdown ingestion with heading-aware chunking to a JSONL artifact, simple local chunk retrieval using keyword overlap and metadata boosts, an internal prompt builder that formats retrieved chunks with assistant boundary rules, an LLM provider interface with a deterministic mock provider, a FastAPI app with `GET /health`, a mock RAG-style `POST /chat`, and in-memory `GET /traces/{request_id}`, Docker build support for the current app, Kubernetes manifest examples for the current app, and a GitHub Actions CI workflow for pytest, ruff checks, Docker image build verification, and Kubernetes manifest validation.
+Implemented:
 
-The `POST /chat` endpoint now loads generated local chunks, retrieves relevant chunks, builds a structured prompt, calls the deterministic mock provider, returns source metadata when local chunks match, and stores an in-memory execution trace. It includes safe fallback responses for missing chunks and expected internal mock-flow failures, including a simple provider timeout boundary. Real LLM generation, embeddings, a vector database, persistent trace storage, image publishing, deployment workflow, and eval runner have not been implemented yet.
+* documentation/source-registry foundation
+* local Markdown ingestion and heading-based chunking to `artifacts/chunks.jsonl`
+* simple keyword retrieval with heading/title and tag boosts
+* deterministic prompt builder with assistant boundary rules
+* provider interface and deterministic `MockLLMProvider`
+* `GET /health`
+* `POST /chat` using the local mock RAG-style flow
+* fallback handling for missing chunks, retrieval errors, prompt errors, provider errors, and provider timeout
+* in-memory trace store and `GET /traces/{request_id}`
+* local deterministic behavioral eval with `eval/cases.yaml` and `scripts/run_eval.py`
+* pytest and ruff setup
+* Dockerfile
+* Kubernetes manifest examples
+* GitHub Actions CI for tests, ruff, Docker build, and kubeconform manifest validation
 
-## Planned Project
+Current limitations:
 
-The intended project is a read-only gateway service that answers Kubernetes documentation questions by:
+* Real LLM generation is not implemented.
+* No external LLM APIs or provider SDKs are used.
+* Embeddings, vector DB, hybrid retrieval, and reranking are not implemented.
+* Kubernetes upstream docs are registered but mostly not imported yet.
+* The current local corpus is intentionally small and mainly custom runbooks.
+* The trace store is in-memory only and disappears on process restart.
+* Behavioral eval checks deterministic mock-flow fields, traces, prompts, sources, and fallback metadata; it is not a real LLM quality benchmark.
+* Image publishing, CD, and real Kubernetes deployment automation are not implemented.
+* This is not a full Kubernetes documentation Q&A assistant yet.
 
-* receiving a user question through a future FastAPI `/chat` API
-* retrieving relevant chunks from a curated, versioned subset of Kubernetes documentation
-* building a source-grounded prompt
-* using a mock LLM provider for local development and an optional real provider later
-* returning an answer with source metadata
-* tracking latency, token usage, fallback status, and request traces
-* supporting behavioral evaluation for grounding and assistant boundaries
+## Current Architecture
 
-The goal is to demonstrate backend and platform concerns around LLM features, not to replace official Kubernetes documentation or provide official support. Answers should be based on a specific Kubernetes documentation version or pinned upstream commit, not on an unspecified documentation state or a live Kubernetes cluster.
+```text
+POST /chat
+  |
+  v
+load artifacts/chunks.jsonl
+  |
+  v
+simple keyword retrieval
+  |
+  v
+prompt builder
+  |
+  v
+MockLLMProvider
+  |
+  v
+response with answer, sources, token usage, latency, fallback/error metadata
+  |
+  v
+in-memory trace store -> GET /traces/{request_id}
+```
+
+The mock provider returns deterministic text. The useful grounding signal today is in the returned source metadata and the saved trace prompt/context, not in natural-language model quality.
 
 ## Documentation
 
@@ -30,67 +67,6 @@ The goal is to demonstrate backend and platform concerns around LLM features, no
 * [Project Spec](docs/project-spec.md)
 * [Documentation Source Registry](docs_source/README.md)
 * [Attribution Notice](NOTICE.md)
-
-## Roadmap
-
-### Phase 1: Documentation Foundation
-
-* [x] Project README
-* [x] Long-term vision document
-* [x] Project specification
-* [x] Documentation source registry structure
-* [x] Kubernetes documentation attribution notice
-* [x] Apache License 2.0 for project source code
-
-### Phase 2: FastAPI Skeleton
-
-* [x] FastAPI application package
-* [x] `GET /health`
-* [x] basic configuration
-* [x] test and lint setup
-
-### Phase 3: Chat Contract
-
-* [x] `POST /chat`
-* [x] request and response schemas
-* [x] request ID generation
-* [x] mock response
-* [x] latency and token usage fields
-
-### Phase 4: Documentation Retrieval
-
-* [ ] import selected Kubernetes documentation from the registered upstream
-* [x] Markdown document loading
-* [x] heading-aware chunking
-* [x] lightweight local retrieval
-* [x] source metadata in responses
-
-### Phase 5: Gateway Reliability
-
-* [x] prompt builder
-* [x] mock LLM provider abstraction
-* [ ] optional real LLM provider
-* [x] model-call timeout
-* [x] safe fallback response
-* [x] structured error metadata
-
-### Phase 6: Observability and Evaluation
-
-* [x] in-memory trace store
-* [x] `GET /traces/{request_id}`
-* [ ] latency and token usage tracking
-* [ ] behavioral eval cases
-* [ ] eval runner
-
-### Phase 7: Deployment and CI
-
-* [x] GitHub Actions workflow for pytest and ruff checks
-* [x] Dockerfile for the minimal FastAPI app
-* [x] Docker build check in CI
-* [x] Kubernetes Deployment and Service manifests
-* [x] ConfigMap and secret example
-* [x] Kubernetes manifest validation in CI
-* [ ] optional image publishing workflow
 
 ## Local Development
 
@@ -126,84 +102,144 @@ Run local documentation ingestion:
 python scripts/ingest_docs.py
 ```
 
-The ingestion script reads local Markdown files referenced by the source registry and writes heading-based chunk metadata to:
+The ingestion script reads local Markdown files referenced by the registry, skips missing local files gracefully, and writes heading-based chunk metadata to:
 
 ```text
 artifacts/chunks.jsonl
 ```
 
-Many registered upstream Kubernetes documentation files are placeholders and have not been downloaded yet, so the ingestion summary may report missing local documents. Run ingestion before testing `/chat` locally if you want source metadata in chat responses.
+Many registered upstream Kubernetes docs are placeholders until the upstream import step is implemented, so missing local docs are expected.
 
-Run simple local chunk retrieval after ingestion:
+Run simple local chunk retrieval:
 
 ```bash
 python scripts/retrieve_chunks.py "pod pending scheduling"
 ```
 
-Retrieval loads `artifacts/chunks.jsonl`, scores chunks with lowercase keyword overlap, and applies simple boosts for heading/title and tag matches. It does not use embeddings or a vector database.
-
-Build a structured prompt manually after ingestion:
+Build a structured prompt:
 
 ```bash
 python scripts/build_prompt.py "pod pending scheduling"
 ```
 
-The prompt builder formats retrieved chunk metadata and content with assistant boundary rules. It does not call a real LLM.
-
-Run the deterministic mock provider manually:
+Run the deterministic mock provider:
 
 ```bash
 python scripts/mock_generate.py "example prompt"
 ```
 
-The provider interface accepts a prompt and returns a model-like response with simple estimated token usage. The mock provider does not call an external API, and no real LLM provider SDK or API key is configured.
+Run local behavioral eval:
 
-Run the FastAPI server locally:
+```bash
+python scripts/run_eval.py
+```
+
+The eval runner loads [eval/cases.yaml](eval/cases.yaml), calls the local chat service without a live server, and checks deterministic expectations against response fields and in-memory traces.
+
+Run the FastAPI app:
 
 ```bash
 uvicorn app.main:app --reload
 ```
 
-Check the health endpoint:
+Check health:
 
 ```bash
 curl http://127.0.0.1:8000/health
 ```
 
-Call the mock chat endpoint:
+Call chat:
 
 ```bash
 curl -X POST http://127.0.0.1:8000/chat \
   -H "Content-Type: application/json" \
-  -d '{"message":"How do I check pod status?"}'
+  -d '{"message":"What should I check for a Pending Pod?","top_k":3}'
 ```
 
-The response is generated by the local mock RAG-style flow: load generated chunks, retrieve relevant chunks, build a prompt, call the deterministic mock provider, and return source metadata. If chunks are missing or an expected internal step fails, `/chat` returns a safe fallback response with `fallback=true` and a specific `error_type`. It does not call an external LLM, use embeddings or a vector database, inspect clusters, persist traces, run evaluation, or provide full Kubernetes documentation Q&A.
+If `artifacts/chunks.jsonl` exists and matching chunks are found, `/chat` returns source metadata. If chunks are missing, it returns a safe fallback with `fallback=true` and `error_type="chunks_not_found"`.
 
-Retrieve an in-memory trace for a chat response:
+Retrieve an in-memory trace:
 
 ```bash
 curl http://127.0.0.1:8000/traces/<request_id>
 ```
 
-Traces include the question, final answer, returned sources, retrieved chunk metadata and content, built prompt, model, token usage, latency, fallback status, error type, and creation time. They are stored only in process memory and disappear when the process restarts.
+Traces include the question, final answer, returned sources, retrieved chunk metadata and content, built prompt, model, token usage, latency, fallback status, error type, and creation time. They are process-local only.
 
-Build and run the Docker image for the current minimal FastAPI app:
+Build and run the Docker image:
 
 ```bash
 docker build -t k8s-docs-rag-gateway:local .
 docker run --rm -p 8000:8000 k8s-docs-rag-gateway:local
 ```
 
-Then check the health endpoint:
+Validate Kubernetes manifests if `kubeconform` is installed:
 
 ```bash
-curl http://127.0.0.1:8000/health
+kubeconform -strict -summary k8s/*.yaml
 ```
+
+## API Summary
+
+### `GET /health`
+
+Returns service metadata:
+
+```json
+{
+  "status": "ok",
+  "service": "k8s-docs-rag-gateway",
+  "environment": "local",
+  "version": "0.1.0"
+}
+```
+
+### `POST /chat`
+
+Request:
+
+```json
+{
+  "user_id": "user-1",
+  "session_id": "session-1",
+  "message": "What should I check for a Pending Pod?",
+  "top_k": 3,
+  "mode": "mock"
+}
+```
+
+Response fields:
+
+* `request_id`
+* `answer`
+* `sources`
+* `model`
+* `latency_ms`
+* `token_usage`
+* `fallback`
+* `error_type`
+
+The answer is generated by the deterministic mock provider. The endpoint does not call an external LLM.
+
+### `GET /traces/{request_id}`
+
+Returns the in-memory trace for a previous `/chat` request, or `404` if the request ID is unknown or the process restarted.
+
+## Roadmap
+
+Next likely milestones:
+
+* import selected Kubernetes upstream docs from the registry
+* expand chunk and retrieval tests against imported upstream docs
+* improve retrieval quality while keeping deterministic test coverage
+* optionally add BM25, vector, or hybrid retrieval
+* optionally add a real LLM provider behind the existing provider interface
+* optionally add persistent trace storage
+* optionally add image publishing and deployment/CD workflow
 
 ## Kubernetes Manifests
 
-The `k8s/` directory contains deployment-ready example manifests for running the current minimal FastAPI app and its `GET /health` endpoint. CI validates these manifests with kubeconform, but does not apply them to a cluster.
+The `k8s/` directory contains example manifests for running the current FastAPI app. CI validates these manifests with kubeconform, but does not apply them to a cluster.
 
 Apply the non-secret manifests with:
 
@@ -217,7 +253,7 @@ kubectl apply -f k8s/service.yaml
 
 ## Documentation Sources and Attribution
 
-This project plans to use selected excerpts from the Kubernetes documentation as retrieval sources.
+This project plans to use selected excerpts from Kubernetes documentation as retrieval sources.
 
 * Source repository: https://github.com/kubernetes/website
 * Documentation website: https://kubernetes.io/docs/
@@ -228,7 +264,7 @@ Kubernetes documentation excerpts are not licensed under this project's Apache L
 
 ## Safety Boundary
 
-The planned assistant is read-only and documentation-grounded. It must not claim to inspect live clusters, execute `kubectl`, access kubeconfig files, reveal secrets, invent private infrastructure details, or present itself as an official Kubernetes service.
+The assistant is intended to be read-only and documentation-grounded. It must not claim to inspect live clusters, execute `kubectl`, access kubeconfig files, reveal secrets, invent private infrastructure details, or present itself as an official Kubernetes service.
 
 ## License
 

@@ -1,20 +1,56 @@
 # Documentation Source Registry
 
-This directory defines the planned documentation sources for Kubernetes Docs RAG Gateway.
+This directory defines documentation sources for Kubernetes Docs RAG Gateway.
 
-The project should be treated as a versioned Kubernetes documentation RAG gateway. Answers should be grounded in a specific Kubernetes documentation version or upstream repository commit, not in an unspecified documentation state and not in a live Kubernetes cluster.
+The project treats documentation sources as versioned, attributable retrieval inputs. Answers should be grounded in registered local chunks from a known source, not in an unspecified documentation state and not in a live Kubernetes cluster.
 
-The project starts with a curated subset of Kubernetes documentation instead of importing all English Kubernetes docs. This is an MVP quality-control decision: a smaller source set makes retrieval behavior easier to inspect, improves evaluation coverage, and keeps request traces understandable while the RAG pipeline is still being designed.
+## Current Status
 
-The registry is still designed to grow. The topic-based files under `registry/documents/` should support early curated sources first, then broader topic expansion, and eventually full ingestion of the Kubernetes website repository's `content/en/docs` tree.
+Implemented today:
 
-The repository is currently in the documentation and source-registry foundation stage.
+* registry YAML files under `docs_source/registry/`
+* local custom runbooks under `docs_source/custom/`
+* ingestion script that reads registry entries and local Markdown files
+* YAML frontmatter stripping
+* heading-based chunking
+* JSONL artifact generation at `artifacts/chunks.jsonl`
+* graceful skipping of missing local documents
 
-No Kubernetes documentation files have been imported yet.
+Current local Markdown files:
+
+* `docs_source/custom/pod-pending-troubleshooting.md`
+* `docs_source/custom/cronjob-backfill-checklist.md`
+
+Many official Kubernetes registry entries already exist, but their upstream Markdown files have not been imported yet. A registry entry is therefore a planned/declared source unless its `local_path` exists in the working tree.
+
+## Registry Entries vs Imported Files
+
+Registry files under `docs_source/registry/documents/*.yaml` can reference local paths before those files exist. This lets the project plan a curated source set before downloading upstream Kubernetes docs.
+
+The ingestion script:
+
+```bash
+python scripts/ingest_docs.py
+```
+
+loads all registry entries, reads local Markdown files that exist, skips missing files, writes chunks to:
+
+```text
+artifacts/chunks.jsonl
+```
+
+and prints counts for:
+
+* registry documents found
+* local documents read
+* chunks written
+* missing documents
+
+Missing upstream docs are expected until the Kubernetes documentation import milestone is implemented.
 
 ## Source Selection Strategy
 
-Sources are selected based on target questions and eval cases. The first source set should support questions such as:
+Sources are selected based on target questions and eval cases. The first source set supports questions such as:
 
 * Why is a Pod stuck in Pending?
 * What should I check before running a CronJob backfill?
@@ -33,6 +69,7 @@ Every imported Kubernetes document should be traceable to:
 * `imported_at`, the import timestamp
 * `upstream_repo_path`, the path under the upstream repository
 * `source_url`, the canonical documentation URL
+* `local_path`, the imported local Markdown path
 
 These fields make answers reproducible and help explain which documentation snapshot supported a response.
 
@@ -73,13 +110,17 @@ For curated MVP sources, these fields are written manually. For full ingestion, 
 
 ## Source Expansion Plan
 
-### v0.1 Curated Workload, Scheduling, and Configuration Subset
+### v0.1 Current Curated Local Corpus
 
-Start with a small set of workload, scheduling, configuration, autoscaling, and generic custom runbook documents. This stage is for MVP quality control, retrieval evaluation, prompt design, and trace inspection.
+Use local custom runbooks plus registered upstream placeholders to validate ingestion, retrieval, prompt construction, traces, and eval mechanics.
 
-### v0.2 Topic-Based Expansion
+### v0.2 Import Selected Upstream Docs
 
-Add more topic groups as eval coverage grows. Candidate areas include Services, networking basics, storage basics, rollout troubleshooting, security context basics, and additional controller behavior. Each expansion should include target questions and eval cases before the corpus grows.
+Import the registered Kubernetes workload, scheduling, configuration, and autoscaling Markdown files from a pinned upstream commit. Keep the corpus small enough to inspect manually.
+
+### v0.3 Topic-Based Expansion
+
+Add more topic groups as eval coverage grows. Candidate areas include Services, networking basics, storage basics, rollout troubleshooting, security context basics, and additional controller behavior.
 
 ### v1.0 Full `content/en/docs` Ingestion
 
