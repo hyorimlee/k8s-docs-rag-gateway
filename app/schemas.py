@@ -1,5 +1,6 @@
 """Request and response schemas for the API."""
 
+from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel, Field
@@ -32,14 +33,60 @@ class TokenUsage(BaseModel):
     total_tokens: int
 
 
+class Source(BaseModel):
+    """Source metadata returned for retrieved documentation chunks."""
+
+    chunk_id: str
+    document_id: str
+    title: str
+    heading: Optional[str] = None
+    source_url: Optional[str] = None
+    local_path: str
+    score: float
+    docs_version: Optional[str] = None
+    imported_commit: Optional[str] = None
+
+
 class ChatResponse(BaseModel):
-    """Chat response returned by the mock endpoint."""
+    """Chat response returned by the chat endpoint."""
 
     request_id: str
     answer: str
-    sources: list[dict[str, str]]
+    sources: list[Source]
     model: str
     latency_ms: float
     token_usage: TokenUsage
     fallback: bool
     error_type: Optional[str] = None
+
+
+class RetrievedChunkTrace(BaseModel):
+    """Retrieved chunk metadata and content stored in an in-memory trace."""
+
+    chunk_id: str
+    document_id: str
+    title: str
+    heading: Optional[str] = None
+    source_url: Optional[str] = None
+    local_path: str
+    score: float
+    content: str
+    docs_version: Optional[str] = None
+    imported_commit: Optional[str] = None
+
+
+class TraceResponse(BaseModel):
+    """Stored chat execution trace."""
+
+    request_id: str
+    question: str
+    answer: str
+    sources: list[Source]
+    retrieved_chunks: list[RetrievedChunkTrace]
+    prompt: str
+    model: str
+    token_usage: TokenUsage
+    latency_ms: float
+    fallback: bool
+    error_type: Optional[str] = None
+    created_at: datetime

@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FutureTimeoutError
+from datetime import datetime, timezone
 from pathlib import Path
 from time import perf_counter
 from uuid import uuid4
@@ -13,7 +14,15 @@ from app.providers.base import LLMProvider, ProviderResponse, estimate_tokens
 from app.providers.mock import MockLLMProvider
 from app.retrieval.loader import ChunkRecord, load_chunks
 from app.retrieval.simple import RetrievalResult, retrieve
-from app.schemas import ChatRequest, ChatResponse, Source, TokenUsage
+from app.schemas import (
+    ChatRequest,
+    ChatResponse,
+    RetrievedChunkTrace,
+    Source,
+    TokenUsage,
+    TraceResponse,
+)
+from app.tracing.store import save_trace
 
 CHUNKS_NOT_FOUND_TEXT = (
     "The local documentation chunks artifact was not found. Run "
@@ -86,6 +95,7 @@ def handle_chat(
             question=request.message,
             latency_ms=_elapsed_ms(started_at),
             error_type="prompt_build_error",
+            retrieved_chunks=retrieved_chunks,
         )
 
     try:
@@ -100,6 +110,8 @@ def handle_chat(
             question=request.message,
             latency_ms=_elapsed_ms(started_at),
             error_type="provider_timeout",
+            retrieved_chunks=retrieved_chunks,
+            prompt=prompt,
         )
     except Exception:
         return _fallback_response(
@@ -107,22 +119,34 @@ def handle_chat(
             question=request.message,
             latency_ms=_elapsed_ms(started_at),
             error_type="provider_error",
+            retrieved_chunks=retrieved_chunks,
+            prompt=prompt,
         )
 
-    return ChatResponse(
+    latency_ms = _elapsed_ms(started_at)
+    token_usage = TokenUsage(
+        input_tokens=provider_response.input_tokens,
+        output_tokens=provider_response.output_tokens,
+        total_tokens=provider_response.total_tokens,
+    )
+    sources = [_to_source(result) for result in retrieved_chunks]
+    response = ChatResponse(
         request_id=request_id,
         answer=provider_response.text,
-        sources=[_to_source(result) for result in retrieved_chunks],
+        sources=sources,
         model=provider_response.model,
-        latency_ms=_elapsed_ms(started_at),
-        token_usage=TokenUsage(
-            input_tokens=provider_response.input_tokens,
-            output_tokens=provider_response.output_tokens,
-            total_tokens=provider_response.total_tokens,
-        ),
+        latency_ms=latency_ms,
+        token_usage=token_usage,
         fallback=False,
         error_type=None,
     )
+    _save_trace(
+        response=response,
+        question=request.message,
+        retrieved_chunks=retrieved_chunks,
+        prompt=prompt,
+    )
+    return response
 
 
 def _fallback_response(
@@ -131,12 +155,14 @@ def _fallback_response(
     question: str,
     latency_ms: float,
     error_type: str,
+    retrieved_chunks: list[RetrievalResult] | None = None,
+    prompt: str = "",
 ) -> ChatResponse:
     answer = FALLBACK_TEXT_BY_ERROR_TYPE[error_type]
     input_tokens = estimate_tokens(question)
     output_tokens = estimate_tokens(answer)
 
-    return ChatResponse(
+    response = ChatResponse(
         request_id=request_id,
         answer=answer,
         sources=[],
@@ -150,6 +176,13 @@ def _fallback_response(
         fallback=True,
         error_type=error_type,
     )
+    _save_trace(
+        response=response,
+        question=question,
+        retrieved_chunks=retrieved_chunks or [],
+        prompt=prompt,
+    )
+    return response
 
 
 def _to_source(result: RetrievalResult) -> Source:
@@ -163,6 +196,46 @@ def _to_source(result: RetrievalResult) -> Source:
         score=result.score,
         docs_version=result.docs_version,
         imported_commit=result.imported_commit,
+    )
+
+
+def _to_trace_chunk(result: RetrievalResult) -> RetrievedChunkTrace:
+    return RetrievedChunkTrace(
+        chunk_id=result.chunk_id,
+        document_id=result.document_id,
+        title=result.title,
+        heading=result.heading,
+        source_url=result.source_url,
+        local_path=result.local_path,
+        score=result.score,
+        content=result.content,
+        docs_version=result.docs_version,
+        imported_commit=result.imported_commit,
+    )
+
+
+def _save_trace(
+    *,
+    response: ChatResponse,
+    question: str,
+    retrieved_chunks: list[RetrievalResult],
+    prompt: str,
+) -> None:
+    save_trace(
+        TraceResponse(
+            request_id=response.request_id,
+            question=question,
+            answer=response.answer,
+            sources=response.sources,
+            retrieved_chunks=[_to_trace_chunk(result) for result in retrieved_chunks],
+            prompt=prompt,
+            model=response.model,
+            token_usage=response.token_usage,
+            latency_ms=response.latency_ms,
+            fallback=response.fallback,
+            error_type=response.error_type,
+            created_at=datetime.now(timezone.utc),
+        )
     )
 
 

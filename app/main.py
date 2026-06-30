@@ -1,18 +1,13 @@
 """FastAPI application entrypoint."""
 
-from time import perf_counter
-from uuid import uuid4
-
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 
 from app.config import APP_ENV, APP_NAME, APP_VERSION
-from app.schemas import ChatRequest, ChatResponse, HealthResponse, TokenUsage
+from app.schemas import ChatRequest, ChatResponse, HealthResponse, TraceResponse
+from app.services.chat import handle_chat
+from app.tracing.store import get_trace
 
 app = FastAPI(title=APP_NAME, version=APP_VERSION)
-
-MOCK_CHAT_ANSWER = (
-    "This is a mock response. Retrieval and LLM generation are not implemented yet."
-)
 
 
 @app.get("/health", response_model=HealthResponse)
@@ -28,23 +23,14 @@ def health() -> HealthResponse:
 
 @app.post("/chat", response_model=ChatResponse)
 def chat(request: ChatRequest) -> ChatResponse:
-    """Return a deterministic mock chat response."""
-    started_at = perf_counter()
-    input_tokens = len(request.message.split())
-    output_tokens = len(MOCK_CHAT_ANSWER.split())
-    latency_ms = (perf_counter() - started_at) * 1000
+    """Run the local mock RAG-style chat flow."""
+    return handle_chat(request)
 
-    return ChatResponse(
-        request_id=str(uuid4()),
-        answer=MOCK_CHAT_ANSWER,
-        sources=[],
-        model="mock",
-        latency_ms=latency_ms,
-        token_usage=TokenUsage(
-            input_tokens=input_tokens,
-            output_tokens=output_tokens,
-            total_tokens=input_tokens + output_tokens,
-        ),
-        fallback=False,
-        error_type=None,
-    )
+
+@app.get("/traces/{request_id}", response_model=TraceResponse)
+def trace(request_id: str) -> TraceResponse:
+    """Return an in-memory chat execution trace."""
+    stored_trace = get_trace(request_id)
+    if stored_trace is None:
+        raise HTTPException(status_code=404, detail="Trace not found")
+    return stored_trace
