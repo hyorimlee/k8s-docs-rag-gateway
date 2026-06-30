@@ -6,9 +6,9 @@ This is a personal portfolio project. It is not an official Kubernetes project a
 
 ## Current Status
 
-This repository currently has the documentation/source-registry foundation, local Markdown ingestion with heading-aware chunking to a JSONL artifact, simple local chunk retrieval using keyword overlap and metadata boosts, an internal prompt builder that formats retrieved chunks with assistant boundary rules, an LLM provider interface with a deterministic mock provider, a minimal FastAPI app with `GET /health` and a mock `POST /chat`, Docker build support for the current app, Kubernetes manifest examples for the current app, and a GitHub Actions CI workflow for pytest, ruff checks, Docker image build verification, and Kubernetes manifest validation.
+This repository currently has the documentation/source-registry foundation, local Markdown ingestion with heading-aware chunking to a JSONL artifact, simple local chunk retrieval using keyword overlap and metadata boosts, an internal prompt builder that formats retrieved chunks with assistant boundary rules, an LLM provider interface with a deterministic mock provider, a FastAPI app with `GET /health` and a mock RAG-style `POST /chat`, Docker build support for the current app, Kubernetes manifest examples for the current app, and a GitHub Actions CI workflow for pytest, ruff checks, Docker image build verification, and Kubernetes manifest validation.
 
-The `POST /chat` endpoint currently returns a deterministic mock response only and does not use retrieval, the prompt builder, or the provider interface yet. Embeddings, a vector database, a real LLM provider, a trace store, image publishing, deployment workflow, and eval runner have not been implemented yet.
+The `POST /chat` endpoint now loads generated local chunks, retrieves relevant chunks, builds a structured prompt, calls the deterministic mock provider, and returns source metadata when local chunks match. It includes safe fallback responses for missing chunks and expected internal mock-flow failures, including a simple provider timeout boundary. Real LLM generation, embeddings, a vector database, a trace store, image publishing, deployment workflow, and eval runner have not been implemented yet.
 
 ## Planned Project
 
@@ -63,16 +63,16 @@ The goal is to demonstrate backend and platform concerns around LLM features, no
 * [x] Markdown document loading
 * [x] heading-aware chunking
 * [x] lightweight local retrieval
-* [ ] source metadata in responses
+* [x] source metadata in responses
 
 ### Phase 5: Gateway Reliability
 
 * [x] prompt builder
 * [x] mock LLM provider abstraction
 * [ ] optional real LLM provider
-* [ ] model-call timeout
-* [ ] safe fallback response
-* [ ] structured error metadata
+* [x] model-call timeout
+* [x] safe fallback response
+* [x] structured error metadata
 
 ### Phase 6: Observability and Evaluation
 
@@ -132,7 +132,7 @@ The ingestion script reads local Markdown files referenced by the source registr
 artifacts/chunks.jsonl
 ```
 
-Many registered upstream Kubernetes documentation files are placeholders and have not been downloaded yet, so the ingestion summary may report missing local documents. The generated chunks are not used by `/chat` yet.
+Many registered upstream Kubernetes documentation files are placeholders and have not been downloaded yet, so the ingestion summary may report missing local documents. Run ingestion before testing `/chat` locally if you want source metadata in chat responses.
 
 Run simple local chunk retrieval after ingestion:
 
@@ -140,7 +140,7 @@ Run simple local chunk retrieval after ingestion:
 python scripts/retrieve_chunks.py "pod pending scheduling"
 ```
 
-Retrieval loads `artifacts/chunks.jsonl`, scores chunks with lowercase keyword overlap, and applies simple boosts for heading/title and tag matches. It does not use embeddings, a vector database, a prompt builder, or an LLM provider, and `/chat` still does not use retrieved chunks.
+Retrieval loads `artifacts/chunks.jsonl`, scores chunks with lowercase keyword overlap, and applies simple boosts for heading/title and tag matches. It does not use embeddings or a vector database.
 
 Build a structured prompt manually after ingestion:
 
@@ -148,7 +148,7 @@ Build a structured prompt manually after ingestion:
 python scripts/build_prompt.py "pod pending scheduling"
 ```
 
-The prompt builder formats retrieved chunk metadata and content with assistant boundary rules for a future LLM provider. It does not call an LLM, and `/chat` still does not use retrieval or prompt building.
+The prompt builder formats retrieved chunk metadata and content with assistant boundary rules. It does not call a real LLM.
 
 Run the deterministic mock provider manually:
 
@@ -178,7 +178,7 @@ curl -X POST http://127.0.0.1:8000/chat \
   -d '{"message":"How do I check pod status?"}'
 ```
 
-The response is deterministic mock data. It does not retrieve Kubernetes documentation, use embeddings or a vector database, build prompts, use the provider interface, call an external LLM, inspect clusters, store traces, or run evaluation.
+The response is generated by the local mock RAG-style flow: load generated chunks, retrieve relevant chunks, build a prompt, call the deterministic mock provider, and return source metadata. If chunks are missing or an expected internal step fails, `/chat` returns a safe fallback response with `fallback=true` and a specific `error_type`. It does not call an external LLM, use embeddings or a vector database, inspect clusters, store traces, run evaluation, or provide full Kubernetes documentation Q&A.
 
 Build and run the Docker image for the current minimal FastAPI app:
 
