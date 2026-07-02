@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -183,7 +184,7 @@ def test_eval_runner_reports_missing_chunks_clearly(tmp_path: Path) -> None:
 def test_eval_cli_output_is_deterministic_for_missing_chunks(tmp_path: Path) -> None:
     completed = subprocess.run(
         [
-            ".venv/bin/python",
+            sys.executable,
             "scripts/run_eval.py",
             "--chunks",
             str(tmp_path / "missing.jsonl"),
