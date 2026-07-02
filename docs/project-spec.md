@@ -296,6 +296,8 @@ CI currently runs:
 * pytest
 * ruff lint
 * ruff format check
+* local chunk generation with `scripts/ingest_docs.py`
+* behavioral eval with `scripts/run_eval.py`
 * Docker image build
 * kubeconform validation for `k8s/*.yaml`
 

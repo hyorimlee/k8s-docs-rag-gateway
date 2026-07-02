@@ -33,6 +33,12 @@ jobs:
       - name: Check ruff formatting
         run: ruff format --check .
 
+      - name: Generate local chunks for eval
+        run: python scripts/ingest_docs.py
+
+      - name: Run behavioral eval
+        run: python scripts/run_eval.py
+
       - name: Build Docker image
         run: docker build -t k8s-docs-rag-gateway:ci .
 

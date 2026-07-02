@@ -21,7 +21,7 @@ Implemented:
 * pytest and ruff setup
 * Dockerfile
 * Kubernetes manifest examples
-* GitHub Actions CI for tests, ruff, Docker build, and kubeconform manifest validation
+* GitHub Actions CI for tests, ruff, local ingestion, behavioral eval, Docker build, and kubeconform manifest validation
 
 Current limitations:
 
@@ -134,7 +134,7 @@ Run local behavioral eval:
 python scripts/run_eval.py
 ```
 
-The eval runner loads [eval/cases.yaml](eval/cases.yaml), calls the local chat service without a live server, and checks deterministic expectations against response fields and in-memory traces.
+The eval runner loads [eval/cases.yaml](eval/cases.yaml), calls the local chat service without a live server, and checks deterministic expectations against answers, prompts, source metadata, token usage, fallback/error metadata, and in-memory traces. CI regenerates local chunks and runs this eval as a quality gate.
 
 Run the FastAPI app:
 
