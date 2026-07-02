@@ -1,0 +1,42 @@
+documents:
+  - id: custom-pod-pending-troubleshooting
+    title: Pod Pending Troubleshooting Checklist
+    upstream_id: local-custom
+    collection_ids:
+      - pod-pending-troubleshooting
+    category: custom-runbook
+    priority: p0
+    language: en
+    docs_version: local
+    imported_commit: null
+    imported_at: null
+    source_url: null
+    upstream_repo_path: null
+    local_path: docs_source/custom/pod-pending-troubleshooting.md
+    tags:
+      - pod-pending
+      - troubleshooting
+      - scheduling
+      - checklist
+    reason: A generic checklist can connect official scheduling concepts into a safe triage flow.
+
+  - id: custom-cronjob-backfill-checklist
+    title: CronJob Backfill Safety Checklist
+    upstream_id: local-custom
+    collection_ids:
+      - batch-and-backfill
+    category: custom-runbook
+    priority: p0
+    language: en
+    docs_version: local
+    imported_commit: null
+    imported_at: null
+    source_url: null
+    upstream_repo_path: null
+    local_path: docs_source/custom/cronjob-backfill-checklist.md
+    tags:
+      - cronjob
+      - job
+      - backfill
+      - checklist
+    reason: A generic checklist supports safe backfill planning without private operational details.

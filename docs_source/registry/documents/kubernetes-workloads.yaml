@@ -1,0 +1,106 @@
+documents:
+  - id: k8s-pods
+    title: Pods
+    upstream_id: kubernetes-website
+    collection_ids:
+      - workload-basics
+      - pod-pending-troubleshooting
+    category: workloads
+    priority: p0
+    language: en
+    docs_version: "TODO: e.g. v1.34"
+    imported_commit: "TODO"
+    imported_at: "TODO"
+    source_url: https://kubernetes.io/docs/concepts/workloads/pods/
+    upstream_repo_path: content/en/docs/concepts/workloads/pods/_index.md
+    local_path: docs_source/kubernetes/concepts/workloads/pods/_index.md
+    tags:
+      - pod
+      - workload
+      - basics
+    reason: Pods are the basic execution unit needed for workload and troubleshooting questions.
+
+  - id: k8s-pod-lifecycle
+    title: Pod Lifecycle
+    upstream_id: kubernetes-website
+    collection_ids:
+      - workload-basics
+      - pod-pending-troubleshooting
+    category: workloads
+    priority: p0
+    language: en
+    docs_version: "TODO: e.g. v1.34"
+    imported_commit: "TODO"
+    imported_at: "TODO"
+    source_url: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/
+    upstream_repo_path: content/en/docs/concepts/workloads/pods/pod-lifecycle.md
+    local_path: docs_source/kubernetes/concepts/workloads/pods/pod-lifecycle.md
+    tags:
+      - pod
+      - lifecycle
+      - pending
+      - troubleshooting
+    reason: Pod lifecycle explains phases such as Pending, Running, Succeeded, and Failed.
+
+  - id: k8s-jobs
+    title: Jobs
+    upstream_id: kubernetes-website
+    collection_ids:
+      - workload-basics
+      - batch-and-backfill
+    category: workloads
+    priority: p0
+    language: en
+    docs_version: "TODO: e.g. v1.34"
+    imported_commit: "TODO"
+    imported_at: "TODO"
+    source_url: https://kubernetes.io/docs/concepts/workloads/controllers/job/
+    upstream_repo_path: content/en/docs/concepts/workloads/controllers/job.md
+    local_path: docs_source/kubernetes/concepts/workloads/controllers/job.md
+    tags:
+      - job
+      - batch
+      - workload
+    reason: Jobs are required for explaining one-off and batch workload execution.
+
+  - id: k8s-cronjobs
+    title: CronJobs
+    upstream_id: kubernetes-website
+    collection_ids:
+      - workload-basics
+      - batch-and-backfill
+    category: workloads
+    priority: p0
+    language: en
+    docs_version: "TODO: e.g. v1.34"
+    imported_commit: "TODO"
+    imported_at: "TODO"
+    source_url: https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/
+    upstream_repo_path: content/en/docs/concepts/workloads/controllers/cron-jobs.md
+    local_path: docs_source/kubernetes/concepts/workloads/controllers/cron-jobs.md
+    tags:
+      - cronjob
+      - job
+      - batch
+      - backfill
+    reason: CronJobs are central to scheduled batch workload and backfill safety questions.
+
+  - id: k8s-deployments
+    title: Deployments
+    upstream_id: kubernetes-website
+    collection_ids:
+      - workload-basics
+    category: workloads
+    priority: p1
+    language: en
+    docs_version: "TODO: e.g. v1.34"
+    imported_commit: "TODO"
+    imported_at: "TODO"
+    source_url: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
+    upstream_repo_path: content/en/docs/concepts/workloads/controllers/deployment.md
+    local_path: docs_source/kubernetes/concepts/workloads/controllers/deployment.md
+    tags:
+      - deployment
+      - workload
+      - rollout
+    reason: Deployments provide baseline context for long-running stateless workloads.

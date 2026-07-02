@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt # for running app
+          python -m pip install -r requirements-dev.txt # for running tests (not for production)
+
+      - name: Run tests
+        run: pytest
+
+      - name: Run ruff lint
+        run: ruff check .
+
+      - name: Check ruff formatting
+        run: ruff format --check .
+
+      - name: Generate local chunks for eval
+        run: python scripts/ingest_docs.py
+
+      - name: Run behavioral eval
+        run: python scripts/run_eval.py
+
+      - name: Build Docker image
+        run: docker build -t k8s-docs-rag-gateway:ci .
+
+      - name: Install kubeconform
+        env:
+          KUBECONFORM_VERSION: "0.6.7"
+        run: |
+          curl -L "https://github.com/yannh/kubeconform/releases/download/v${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" -o kubeconform.tar.gz
+          tar -xzf kubeconform.tar.gz kubeconform
+          sudo mv kubeconform /usr/local/bin/kubeconform
+
+      - name: Validate Kubernetes manifests
+        run: kubeconform -strict -summary k8s/*.yaml

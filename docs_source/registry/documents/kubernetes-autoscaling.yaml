@@ -1,0 +1,21 @@
+documents:
+  - id: k8s-horizontal-pod-autoscaling
+    title: Horizontal Pod Autoscaling
+    upstream_id: kubernetes-website
+    collection_ids:
+      - autoscaling-basics
+    category: autoscaling
+    priority: p1
+    language: en
+    docs_version: "TODO: e.g. v1.34"
+    imported_commit: "TODO"
+    imported_at: "TODO"
+    source_url: https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/
+    upstream_repo_path: content/en/docs/tasks/run-application/horizontal-pod-autoscale.md
+    local_path: docs_source/kubernetes/tasks/run-application/horizontal-pod-autoscale.md
+    tags:
+      - hpa
+      - autoscaling
+      - metrics
+      - capacity
+    reason: Horizontal Pod Autoscaling supports basic scaling and capacity questions.

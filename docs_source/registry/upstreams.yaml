@@ -1,0 +1,20 @@
+upstreams:
+  - id: kubernetes-website
+    name: Kubernetes Documentation
+    repository: https://github.com/kubernetes/website
+    website: https://kubernetes.io/docs/
+    license: CC BY 4.0
+    copyright: The Kubernetes Authors
+    docs_version: "TODO: e.g. v1.34"
+    imported_commit: "TODO"
+    imported_at: "TODO"
+
+  - id: local-custom
+    name: Local Custom Runbooks
+    repository: null
+    website: null
+    license: Apache-2.0
+    copyright: Project author
+    docs_version: local
+    imported_commit: null
+    imported_at: null

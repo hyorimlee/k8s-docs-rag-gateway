@@ -1,0 +1,13 @@
+# Legacy pointer retained for early notes.
+# The expandable source registry now lives under docs_source/registry/.
+
+version: 1
+status: superseded
+replacement:
+  upstreams: docs_source/registry/upstreams.yaml
+  collections: docs_source/registry/collections.yaml
+  documents_dir: docs_source/registry/documents/
+notes:
+  - Kubernetes documentation has not been imported yet.
+  - Use the topic-based registry files for future source additions.
+  - Keep Kubernetes documentation attribution in NOTICE.md.
