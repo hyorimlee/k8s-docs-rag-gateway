@@ -8,7 +8,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.providers.mock import MOCK_PROVIDER_TEXT
+from app.providers.mock import CONTEXT_RESPONSE_INTRO, MOCK_PROVIDER_NOTE
 from app.tracing.store import clear_traces
 
 client = TestClient(app)
@@ -62,7 +62,8 @@ def test_successful_chat_saves_trace(
     trace = trace_response.json()
     assert trace["request_id"] == request_id
     assert trace["question"] == "Why is my pod pending scheduling?"
-    assert trace["answer"] == MOCK_PROVIDER_TEXT
+    assert CONTEXT_RESPONSE_INTRO in trace["answer"]
+    assert MOCK_PROVIDER_NOTE in trace["answer"]
     assert trace["sources"] == chat_response.json()["sources"]
     assert trace["retrieved_chunks"][0]["chunk_id"] == "chunk-pending"
     assert trace["retrieved_chunks"][0]["content"] == (

@@ -8,7 +8,11 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.providers.base import ProviderResponse
-from app.providers.mock import MOCK_PROVIDER_TEXT
+from app.providers.mock import (
+    CONTEXT_RESPONSE_INTRO,
+    MOCK_PROVIDER_NOTE,
+    NO_CONTEXT_RESPONSE,
+)
 from app.schemas import ChatRequest
 from app.services.chat import handle_chat
 
@@ -65,13 +69,15 @@ def test_chat_returns_mock_rag_response_with_sources(
     assert response.status_code == 200
     body = response.json()
     assert body["request_id"]
-    assert body["answer"] == MOCK_PROVIDER_TEXT
+    assert CONTEXT_RESPONSE_INTRO in body["answer"]
+    assert "Pod Pending Troubleshooting" in body["answer"]
+    assert MOCK_PROVIDER_NOTE in body["answer"]
     assert body["model"] == "mock"
     assert body["fallback"] is False
     assert body["error_type"] is None
     assert body["latency_ms"] >= 0
     assert body["token_usage"]["input_tokens"] > 0
-    assert body["token_usage"]["output_tokens"] == len(MOCK_PROVIDER_TEXT.split())
+    assert body["token_usage"]["output_tokens"] == len(body["answer"].split())
     assert body["token_usage"]["total_tokens"] == (
         body["token_usage"]["input_tokens"] + body["token_usage"]["output_tokens"]
     )
@@ -199,7 +205,8 @@ def test_chat_returns_no_sources_when_retrieval_has_no_matches(
 
     assert response.status_code == 200
     body = response.json()
-    assert body["answer"] == MOCK_PROVIDER_TEXT
+    assert NO_CONTEXT_RESPONSE in body["answer"]
+    assert MOCK_PROVIDER_NOTE in body["answer"]
     assert body["sources"] == []
     assert body["fallback"] is False
     assert body["error_type"] is None

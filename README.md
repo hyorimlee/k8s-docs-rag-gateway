@@ -59,7 +59,7 @@ response with answer, sources, token usage, latency, fallback/error metadata
 in-memory trace store -> GET /traces/{request_id}
 ```
 
-The mock provider returns deterministic text. The useful grounding signal today is in the returned source metadata and the saved trace prompt/context, not in natural-language model quality.
+The mock provider returns deterministic context-shaped text for local testing. The useful grounding signal today is in the returned source metadata and the saved trace prompt/context, not in real natural-language model quality.
 
 ## Documentation
 
