@@ -18,6 +18,7 @@ Implemented:
 * fallback handling for missing chunks, retrieval errors, prompt errors, provider errors, and provider timeout
 * in-memory trace store and `GET /traces/{request_id}`
 * local deterministic behavioral eval with `eval/cases.yaml` and `scripts/run_eval.py`
+* manual Promptfoo `/chat` API regression checks with `promptfooconfig.yaml`
 * pytest and ruff setup
 * Dockerfile
 * Kubernetes manifest examples
@@ -32,6 +33,7 @@ Current limitations:
 * The current local corpus is intentionally small and mainly custom runbooks.
 * The trace store is in-memory only and disappears on process restart.
 * Behavioral eval checks deterministic mock-flow fields, traces, prompts, sources, and fallback metadata; it is not a real LLM quality benchmark.
+* Promptfoo checks are local/manual API regression checks in this phase; they are not a CI gate and do not use an LLM judge.
 * Image publishing, CD, and real Kubernetes deployment automation are not implemented.
 * This is not a full Kubernetes documentation Q&A assistant yet.
 
@@ -135,6 +137,16 @@ python scripts/run_eval.py
 ```
 
 The eval runner loads [eval/cases.yaml](eval/cases.yaml), calls the local chat service without a live server, and checks deterministic expectations against answers, prompts, source metadata, token usage, fallback/error metadata, and in-memory traces. CI regenerates local chunks and runs this eval as a quality gate.
+
+Run manual Promptfoo `/chat` API regression checks:
+
+```bash
+python scripts/ingest_docs.py
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+npx promptfoo@latest eval -c promptfooconfig.yaml --no-cache
+```
+
+The Promptfoo config calls the running local `/chat` API on the standard FastAPI port 8000 and uses deterministic `contains` and `not-contains` assertions against the returned answer text. It complements the internal eval runner by checking the API from an external client perspective, while the internal eval continues to validate traces, prompts, source metadata, fallback/error metadata, and token usage in CI.
 
 Run the FastAPI app:
 
