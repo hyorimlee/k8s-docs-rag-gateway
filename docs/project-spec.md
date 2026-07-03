@@ -50,6 +50,9 @@ The assistant should answer from known documentation sources and should not impl
 * Local deterministic behavioral eval:
   * `eval/cases.yaml`
   * `scripts/run_eval.py`
+* Manual Promptfoo API regression checks:
+  * `promptfooconfig.yaml`
+  * deterministic checks against the running local `/chat` endpoint
 * Dockerfile
 * Kubernetes manifest examples
 * GitHub Actions CI:
@@ -69,6 +72,7 @@ The assistant should answer from known documentation sources and should not impl
 * The local corpus is small and mainly custom runbooks.
 * The trace store is in-memory only and does not persist across process restarts.
 * Behavioral eval checks deterministic mock-flow mechanics, not real model quality.
+* Promptfoo checks are manual/local API regression checks in this phase and are not a CI gate.
 * Image publishing, CD, and real cluster deployment automation are not implemented.
 * This is not a full Kubernetes docs Q&A assistant yet.
 
@@ -289,6 +293,20 @@ It checks deterministic expectations against:
 
 This is not a real LLM quality benchmark. It validates the current mock-flow mechanics and safety boundaries.
 
+## Promptfoo API Regression Checks
+
+`promptfooconfig.yaml` defines a small manual regression suite for the running local `/chat` API. It posts representative questions to `http://127.0.0.1:8000/chat` and checks the deterministic mock-provider answer text with simple `contains` and `not-contains` assertions.
+
+These checks cover the same broad behavioral areas as the local eval cases:
+
+* Pending Pod triage
+* CronJob backfill safety
+* live cluster access boundaries
+* secret handling boundaries
+* unrelated/no-context questions
+
+Promptfoo is intentionally not a CI gate in the current phase. The internal Python eval runner remains the CI gate because it can inspect response fields, traces, prompts, source metadata, fallback/error metadata, and token usage without requiring a live server or external tooling. The Promptfoo suite is useful for manual API-level smoke and regression testing before tagging or demos.
+
 ## CI and Deployment
 
 CI currently runs:
@@ -301,7 +319,7 @@ CI currently runs:
 * Docker image build
 * kubeconform validation for `k8s/*.yaml`
 
-The repository includes a Dockerfile and Kubernetes manifest examples. CI does not publish images or deploy to a real cluster.
+The repository includes a Dockerfile and Kubernetes manifest examples. CI does not run Promptfoo, publish images, or deploy to a real cluster.
 
 ## Roadmap
 
