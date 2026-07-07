@@ -7,9 +7,9 @@ documents:
     category: scheduling
     priority: p0
     language: en
-    docs_version: "TODO: e.g. v1.34"
-    imported_commit: "TODO"
-    imported_at: "TODO"
+    docs_version: "main@2026-07-02"
+    imported_commit: fe4bd876c5335ba137b1b564d93258c446b4b0ee
+    imported_at: "2026-07-03"
     source_url: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
     upstream_repo_path: content/en/docs/concepts/scheduling-eviction/assign-pod-node.md
     local_path: docs_source/kubernetes/concepts/scheduling-eviction/assign-pod-node.md
@@ -28,9 +28,9 @@ documents:
     category: scheduling
     priority: p0
     language: en
-    docs_version: "TODO: e.g. v1.34"
-    imported_commit: "TODO"
-    imported_at: "TODO"
+    docs_version: "main@2026-07-02"
+    imported_commit: fe4bd876c5335ba137b1b564d93258c446b4b0ee
+    imported_at: "2026-07-03"
     source_url: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
     upstream_repo_path: content/en/docs/concepts/scheduling-eviction/taint-and-toleration.md
     local_path: docs_source/kubernetes/concepts/scheduling-eviction/taint-and-toleration.md
@@ -49,9 +49,9 @@ documents:
     category: scheduling
     priority: p0
     language: en
-    docs_version: "TODO: e.g. v1.34"
-    imported_commit: "TODO"
-    imported_at: "TODO"
+    docs_version: "main@2026-07-02"
+    imported_commit: fe4bd876c5335ba137b1b564d93258c446b4b0ee
+    imported_at: "2026-07-03"
     source_url: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
     upstream_repo_path: content/en/docs/concepts/configuration/manage-resources-containers.md
     local_path: docs_source/kubernetes/concepts/configuration/manage-resources-containers.md

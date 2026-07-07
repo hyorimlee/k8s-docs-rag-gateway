@@ -5,9 +5,9 @@ upstreams:
     website: https://kubernetes.io/docs/
     license: CC BY 4.0
     copyright: The Kubernetes Authors
-    docs_version: "TODO: e.g. v1.34"
-    imported_commit: "TODO"
-    imported_at: "TODO"
+    docs_version: "main@2026-07-02"
+    imported_commit: fe4bd876c5335ba137b1b564d93258c446b4b0ee
+    imported_at: "2026-07-03"
 
   - id: local-custom
     name: Local Custom Runbooks

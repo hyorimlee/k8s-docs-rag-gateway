@@ -7,9 +7,9 @@ documents:
     category: configuration
     priority: p0
     language: en
-    docs_version: "TODO: e.g. v1.34"
-    imported_commit: "TODO"
-    imported_at: "TODO"
+    docs_version: "main@2026-07-02"
+    imported_commit: fe4bd876c5335ba137b1b564d93258c446b4b0ee
+    imported_at: "2026-07-03"
     source_url: https://kubernetes.io/docs/concepts/configuration/configmap/
     upstream_repo_path: content/en/docs/concepts/configuration/configmap.md
     local_path: docs_source/kubernetes/concepts/configuration/configmap.md
@@ -27,9 +27,9 @@ documents:
     category: configuration
     priority: p0
     language: en
-    docs_version: "TODO: e.g. v1.34"
-    imported_commit: "TODO"
-    imported_at: "TODO"
+    docs_version: "main@2026-07-02"
+    imported_commit: fe4bd876c5335ba137b1b564d93258c446b4b0ee
+    imported_at: "2026-07-03"
     source_url: https://kubernetes.io/docs/concepts/configuration/secret/
     upstream_repo_path: content/en/docs/concepts/configuration/secret.md
     local_path: docs_source/kubernetes/concepts/configuration/secret.md

@@ -5,6 +5,9 @@ from pathlib import Path
 
 import pytest
 
+from app.ingestion.chunker import chunk_markdown
+from app.ingestion.markdown import read_markdown
+from app.ingestion.registry import load_registry_documents
 from app.retrieval.loader import ChunkRecord, load_chunks
 from app.retrieval.simple import retrieve
 
@@ -134,6 +137,63 @@ def test_results_are_deterministic_for_ties() -> None:
     assert [result.chunk_id for result in results] == ["chunk-a", "chunk-b"]
 
 
+def test_retriever_ignores_common_question_stopwords() -> None:
+    chunks = [
+        chunk(
+            "chunk-k8s",
+            content="Avoid exposing raw secrets in chat.",
+        )
+    ]
+
+    results = retrieve("How do I improve my sourdough starter?", chunks, top_k=3)
+
+    assert results == []
+
+
+@pytest.mark.parametrize(
+    ("query", "expected_document_ids"),
+    [
+        (
+            "Horizontal Pod Autoscaler",
+            {"k8s-horizontal-pod-autoscaling"},
+        ),
+        ("Kubernetes Secret", {"k8s-secrets"}),
+        ("ConfigMap", {"k8s-configmaps"}),
+        ("Pod lifecycle", {"k8s-pod-lifecycle"}),
+        (
+            "taints and tolerations",
+            {"k8s-taints-and-tolerations"},
+        ),
+        (
+            "resource requests limits",
+            {"k8s-resource-management"},
+        ),
+        (
+            "How do I configure a CronJob schedule?",
+            {"k8s-cronjobs", "custom-cronjob-backfill-checklist"},
+        ),
+        (
+            "Why is my Pod pending because of node affinity or taints?",
+            {
+                "k8s-assign-pods-to-nodes",
+                "k8s-taints-and-tolerations",
+                "custom-pod-pending-troubleshooting",
+            },
+        ),
+    ],
+)
+def test_retriever_finds_imported_kubernetes_docs(
+    query: str,
+    expected_document_ids: set[str],
+) -> None:
+    chunks = imported_corpus_chunks()
+
+    results = retrieve(query, chunks, top_k=5)
+    result_document_ids = {result.document_id for result in results}
+
+    assert result_document_ids.intersection(expected_document_ids)
+
+
 def fixture_chunks() -> list[ChunkRecord]:
     return [
         chunk(
@@ -164,6 +224,33 @@ def fixture_chunks() -> list[ChunkRecord]:
             local_path="docs/tag.md",
         ),
     ]
+
+
+def imported_corpus_chunks() -> list[ChunkRecord]:
+    chunks = []
+    for document in load_registry_documents():
+        if document.local_path.exists():
+            content = read_markdown(document.local_path)
+            chunks.extend(
+                ChunkRecord(
+                    chunk_id=chunk.chunk_id,
+                    document_id=chunk.document_id,
+                    title=chunk.title,
+                    heading=chunk.heading,
+                    source_url=chunk.source_url,
+                    local_path=chunk.local_path,
+                    docs_version=chunk.docs_version,
+                    imported_commit=chunk.imported_commit,
+                    collection_ids=chunk.collection_ids,
+                    tags=chunk.tags,
+                    category=chunk.category,
+                    priority=chunk.priority,
+                    language=chunk.language,
+                    content=chunk.content,
+                )
+                for chunk in chunk_markdown(document, content)
+            )
+    return chunks
 
 
 def chunk(

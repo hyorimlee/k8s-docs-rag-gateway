@@ -2,7 +2,7 @@
 
 Kubernetes Docs RAG Gateway is a personal portfolio project. It is not an official Kubernetes project and is not affiliated with, endorsed by, or sponsored by Kubernetes, CNCF, or The Kubernetes Authors.
 
-This project plans to use selected excerpts from the Kubernetes documentation for retrieval experiments.
+This project uses selected excerpts from the Kubernetes documentation for retrieval experiments.
 
 Kubernetes documentation source information:
 

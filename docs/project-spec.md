@@ -12,12 +12,14 @@ The assistant should answer from known documentation sources and should not impl
 
 * Documentation/source registry foundation under `docs_source/`
 * Local custom runbooks under `docs_source/custom/`
+* Curated Kubernetes upstream excerpts under `docs_source/kubernetes/`
 * Registry YAML loading from `docs_source/registry/documents/*.yaml`
 * Local Markdown loading and YAML frontmatter stripping
 * Heading-based chunking
 * JSONL chunk artifact at `artifacts/chunks.jsonl`
 * Simple deterministic retrieval:
   * content keyword overlap
+  * common question stopword filtering
   * heading/title boost
   * tag boost
   * deterministic `top_k`
@@ -68,8 +70,8 @@ The assistant should answer from known documentation sources and should not impl
 * No external APIs are called.
 * No OpenAI, Anthropic, Gemini, or other real provider SDKs are installed.
 * Embeddings, vector DB, hybrid retrieval, and reranking are not implemented.
-* Kubernetes upstream docs are registered but mostly not imported yet.
-* The local corpus is small and mainly custom runbooks.
+* Only a curated subset of Kubernetes upstream docs is imported.
+* The local corpus is small and intentionally not a full Kubernetes documentation mirror.
 * The trace store is in-memory only and does not persist across process restarts.
 * Behavioral eval checks deterministic mock-flow mechanics, not real model quality.
 * Promptfoo checks are manual/local API regression checks in this phase and are not a CI gate.
@@ -204,12 +206,12 @@ The registry defines a curated subset of Kubernetes documentation that supports 
 
 Registry entries may exist before the corresponding local Markdown file is imported. The ingestion script uses `local_path`, reads files that exist, skips missing files gracefully, and reports missing counts.
 
-Current local files are mainly custom runbooks:
+Current custom runbooks:
 
 * `docs_source/custom/pod-pending-troubleshooting.md`
 * `docs_source/custom/cronjob-backfill-checklist.md`
 
-Registered upstream Kubernetes topics include:
+Imported v0.4.0 Kubernetes upstream subset:
 
 * Pods
 * Pod Lifecycle
@@ -223,13 +225,21 @@ Registered upstream Kubernetes topics include:
 * Secrets
 * Horizontal Pod Autoscaling
 
-These upstream documents are mostly not imported yet.
+The upstream excerpts are pinned in registry metadata to Kubernetes website commit `fe4bd876c5335ba137b1b564d93258c446b4b0ee` with `docs_version` set to `main@2026-07-02`.
+
+Ingestion summary for the v0.4.0 corpus expansion:
+
+```text
+Before upstream import: registry documents found: 13, local documents read: 2, chunks written: 8, missing documents: 11
+After upstream import:  registry documents found: 13, local documents read: 13, chunks written: 62, missing documents: 0
+```
 
 ## Retrieval Design
 
 The current retrieval implementation is lightweight and local. It scores chunks by:
 
 * content keyword overlap
+* common question stopword filtering
 * heading/title boost
 * tag boost
 
@@ -325,13 +335,12 @@ The repository includes a Dockerfile and Kubernetes manifest examples. CI does n
 
 Suggested next milestones:
 
-1. Import selected Kubernetes upstream docs from the existing registry.
-2. Expand chunking and retrieval tests against imported upstream docs.
-3. Improve retrieval quality while keeping deterministic evaluation.
-4. Optionally add BM25, vector, or hybrid retrieval.
-5. Optionally add a real LLM provider behind the provider interface.
-6. Optionally add persistent trace storage.
-7. Optionally add image publishing and deployment/CD workflow.
+1. Expand the curated upstream corpus beyond the current workload, scheduling, configuration, and autoscaling subset.
+2. Add retrieval quality metrics for the larger corpus while keeping deterministic evaluation.
+3. Optionally add BM25, vector, or hybrid retrieval.
+4. Optionally add a real LLM provider behind the provider interface.
+5. Optionally add persistent trace storage.
+6. Optionally add image publishing and deployment/CD workflow.
 
 ## Security and Safety
 

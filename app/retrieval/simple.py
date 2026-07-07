@@ -9,6 +9,32 @@ TOKEN_PATTERN = re.compile(r"[a-z0-9]+")
 CONTENT_WEIGHT = 1.0
 HEADING_TITLE_WEIGHT = 3.0
 TAG_WEIGHT = 2.0
+STOPWORDS = {
+    "a",
+    "an",
+    "and",
+    "are",
+    "as",
+    "can",
+    "do",
+    "does",
+    "for",
+    "how",
+    "i",
+    "in",
+    "is",
+    "it",
+    "my",
+    "of",
+    "or",
+    "should",
+    "the",
+    "to",
+    "what",
+    "when",
+    "why",
+    "with",
+}
 
 
 @dataclass(frozen=True)
@@ -69,7 +95,9 @@ def score_chunk(query_tokens: set[str], chunk: ChunkRecord) -> float:
 
 
 def tokenize(text: str) -> list[str]:
-    return TOKEN_PATTERN.findall(text.lower())
+    return [
+        token for token in TOKEN_PATTERN.findall(text.lower()) if token not in STOPWORDS
+    ]
 
 
 def _overlap_count(query_tokens: set[str], candidate_tokens: list[str]) -> int:

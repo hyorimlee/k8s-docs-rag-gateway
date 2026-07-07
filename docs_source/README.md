@@ -10,18 +10,33 @@ Implemented today:
 
 * registry YAML files under `docs_source/registry/`
 * local custom runbooks under `docs_source/custom/`
+* curated Kubernetes upstream excerpts under `docs_source/kubernetes/`
 * ingestion script that reads registry entries and local Markdown files
 * YAML frontmatter stripping
 * heading-based chunking
 * JSONL artifact generation at `artifacts/chunks.jsonl`
 * graceful skipping of missing local documents
 
-Current local Markdown files:
+Current local custom Markdown files:
 
 * `docs_source/custom/pod-pending-troubleshooting.md`
 * `docs_source/custom/cronjob-backfill-checklist.md`
 
-Many official Kubernetes registry entries already exist, but their upstream Markdown files have not been imported yet. A registry entry is therefore a planned/declared source unless its `local_path` exists in the working tree.
+Current imported Kubernetes upstream subset:
+
+* `docs_source/kubernetes/concepts/workloads/pods/_index.md`
+* `docs_source/kubernetes/concepts/workloads/pods/pod-lifecycle.md`
+* `docs_source/kubernetes/concepts/workloads/controllers/job.md`
+* `docs_source/kubernetes/concepts/workloads/controllers/cron-jobs.md`
+* `docs_source/kubernetes/concepts/workloads/controllers/deployment.md`
+* `docs_source/kubernetes/concepts/scheduling-eviction/assign-pod-node.md`
+* `docs_source/kubernetes/concepts/scheduling-eviction/taint-and-toleration.md`
+* `docs_source/kubernetes/concepts/configuration/manage-resources-containers.md`
+* `docs_source/kubernetes/concepts/configuration/configmap.md`
+* `docs_source/kubernetes/concepts/configuration/secret.md`
+* `docs_source/kubernetes/tasks/run-application/horizontal-pod-autoscale.md`
+
+The imported upstream files are curated excerpts, not a full mirror of the Kubernetes documentation website.
 
 ## Registry Entries vs Imported Files
 
@@ -46,7 +61,7 @@ and prints counts for:
 * chunks written
 * missing documents
 
-Missing upstream docs are expected until the Kubernetes documentation import milestone is implemented.
+Missing registry documents are allowed by the ingestion design. In v0.4.0 the current registry entries all resolve locally, but future registry expansion may again include planned documents whose `local_path` has not been imported yet.
 
 ## Source Selection Strategy
 
@@ -110,15 +125,15 @@ For curated MVP sources, these fields are written manually. For full ingestion, 
 
 ## Source Expansion Plan
 
-### v0.1 Current Curated Local Corpus
+### v0.1 Curated Local Corpus
 
 Use local custom runbooks plus registered upstream placeholders to validate ingestion, retrieval, prompt construction, traces, and eval mechanics.
 
-### v0.2 Import Selected Upstream Docs
+### v0.4 Import Selected Upstream Docs
 
-Import the registered Kubernetes workload, scheduling, configuration, and autoscaling Markdown files from a pinned upstream commit. Keep the corpus small enough to inspect manually.
+Import the registered Kubernetes workload, scheduling, configuration, and autoscaling Markdown files from pinned upstream commit `fe4bd876c5335ba137b1b564d93258c446b4b0ee`. Keep the corpus small enough to inspect manually.
 
-### v0.3 Topic-Based Expansion
+### v0.5 Topic-Based Expansion
 
 Add more topic groups as eval coverage grows. Candidate areas include Services, networking basics, storage basics, rollout troubleshooting, security context basics, and additional controller behavior.
 

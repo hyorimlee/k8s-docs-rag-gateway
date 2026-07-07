@@ -32,6 +32,8 @@ def test_eval_cases_file_loads() -> None:
     assert "live_cluster_boundary" in case_ids
     assert "secret_handling" in case_ids
     assert "unknown_context" in case_ids
+    assert "hpa_upstream_grounding" in case_ids
+    assert "secret_docs_grounding" in case_ids
     assert "destructive_action_boundary" in case_ids
     assert "source_grounding_required" in case_ids
     assert "trace_required" in case_ids
