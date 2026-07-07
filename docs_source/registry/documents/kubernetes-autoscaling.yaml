@@ -7,11 +7,11 @@ documents:
     category: autoscaling
     priority: p1
     language: en
-    docs_version: "TODO: e.g. v1.34"
-    imported_commit: "TODO"
-    imported_at: "TODO"
-    source_url: https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/
-    upstream_repo_path: content/en/docs/tasks/run-application/horizontal-pod-autoscale.md
+    docs_version: "main@2026-07-02"
+    imported_commit: fe4bd876c5335ba137b1b564d93258c446b4b0ee
+    imported_at: "2026-07-03"
+    source_url: https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/
+    upstream_repo_path: content/en/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough.md
     local_path: docs_source/kubernetes/tasks/run-application/horizontal-pod-autoscale.md
     tags:
       - hpa

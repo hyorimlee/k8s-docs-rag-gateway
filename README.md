@@ -9,8 +9,9 @@ This is a personal portfolio project. It is not an official Kubernetes project a
 Implemented:
 
 * documentation/source-registry foundation
+* curated Kubernetes upstream documentation excerpts under `docs_source/kubernetes/`
 * local Markdown ingestion and heading-based chunking to `artifacts/chunks.jsonl`
-* simple keyword retrieval with heading/title and tag boosts
+* simple keyword retrieval with stopword filtering, heading/title boosts, and tag boosts
 * deterministic prompt builder with assistant boundary rules
 * provider interface and deterministic `MockLLMProvider`
 * `GET /health`
@@ -29,8 +30,8 @@ Current limitations:
 * Real LLM generation is not implemented.
 * No external LLM APIs or provider SDKs are used.
 * Embeddings, vector DB, hybrid retrieval, and reranking are not implemented.
-* Kubernetes upstream docs are registered but mostly not imported yet.
-* The current local corpus is intentionally small and mainly custom runbooks.
+* Only a curated subset of Kubernetes upstream docs is imported; this is not the full Kubernetes docs corpus.
+* The current local corpus is intentionally small: selected upstream excerpts plus custom runbooks.
 * The trace store is in-memory only and disappears on process restart.
 * Behavioral eval checks deterministic mock-flow fields, traces, prompts, sources, and fallback metadata; it is not a real LLM quality benchmark.
 * Promptfoo checks are local/manual API regression checks in this phase; they are not a CI gate and do not use an LLM judge.
@@ -67,6 +68,7 @@ The mock provider returns deterministic context-shaped text for local testing. T
 
 * [Vision](docs/vision.md)
 * [Project Spec](docs/project-spec.md)
+* [Technical Decisions](docs/decisions/technical-decisions.md)
 * [Documentation Source Registry](docs_source/README.md)
 * [Attribution Notice](NOTICE.md)
 
@@ -110,12 +112,22 @@ The ingestion script reads local Markdown files referenced by the registry, skip
 artifacts/chunks.jsonl
 ```
 
-Many registered upstream Kubernetes docs are placeholders until the upstream import step is implemented, so missing local docs are expected.
+Current v0.4.0 ingestion summary:
+
+```text
+Before upstream import: registry documents found: 13, local documents read: 2, chunks written: 8, missing documents: 11
+After upstream import:  registry documents found: 13, local documents read: 13, chunks written: 62, missing documents: 0
+```
+
+The imported upstream corpus is a curated subset, not a mirror of the full Kubernetes documentation website.
 
 Run simple local chunk retrieval:
 
 ```bash
 python scripts/retrieve_chunks.py "pod pending scheduling"
+python scripts/retrieve_chunks.py "How does Horizontal Pod Autoscaler work?" --top-k 3
+python scripts/retrieve_chunks.py "How do Kubernetes Secrets work?" --top-k 3
+python scripts/retrieve_chunks.py "How do I configure a CronJob?" --top-k 3
 ```
 
 Build a structured prompt:
@@ -241,9 +253,8 @@ Returns the in-memory trace for a previous `/chat` request, or `404` if the requ
 
 Next likely milestones:
 
-* import selected Kubernetes upstream docs from the registry
-* expand chunk and retrieval tests against imported upstream docs
-* improve retrieval quality while keeping deterministic test coverage
+* expand the upstream corpus beyond the current curated subset
+* improve retrieval quality while keeping deterministic test and eval coverage
 * optionally add BM25, vector, or hybrid retrieval
 * optionally add a real LLM provider behind the existing provider interface
 * optionally add persistent trace storage
@@ -265,7 +276,21 @@ kubectl apply -f k8s/service.yaml
 
 ## Documentation Sources and Attribution
 
-This project plans to use selected excerpts from Kubernetes documentation as retrieval sources.
+This project uses selected excerpts from Kubernetes documentation as retrieval sources.
+
+Imported v0.4.0 upstream subset:
+
+* Pods
+* Pod Lifecycle
+* Jobs
+* CronJobs
+* Deployments
+* Assigning Pods to Nodes
+* Taints and Tolerations
+* Resource Management for Pods and Containers
+* ConfigMaps
+* Secrets
+* Horizontal Pod Autoscaling
 
 * Source repository: https://github.com/kubernetes/website
 * Documentation website: https://kubernetes.io/docs/

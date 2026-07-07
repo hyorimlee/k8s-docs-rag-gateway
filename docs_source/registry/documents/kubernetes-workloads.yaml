@@ -8,9 +8,9 @@ documents:
     category: workloads
     priority: p0
     language: en
-    docs_version: "TODO: e.g. v1.34"
-    imported_commit: "TODO"
-    imported_at: "TODO"
+    docs_version: "main@2026-07-02"
+    imported_commit: fe4bd876c5335ba137b1b564d93258c446b4b0ee
+    imported_at: "2026-07-03"
     source_url: https://kubernetes.io/docs/concepts/workloads/pods/
     upstream_repo_path: content/en/docs/concepts/workloads/pods/_index.md
     local_path: docs_source/kubernetes/concepts/workloads/pods/_index.md
@@ -29,9 +29,9 @@ documents:
     category: workloads
     priority: p0
     language: en
-    docs_version: "TODO: e.g. v1.34"
-    imported_commit: "TODO"
-    imported_at: "TODO"
+    docs_version: "main@2026-07-02"
+    imported_commit: fe4bd876c5335ba137b1b564d93258c446b4b0ee
+    imported_at: "2026-07-03"
     source_url: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/
     upstream_repo_path: content/en/docs/concepts/workloads/pods/pod-lifecycle.md
     local_path: docs_source/kubernetes/concepts/workloads/pods/pod-lifecycle.md
@@ -51,9 +51,9 @@ documents:
     category: workloads
     priority: p0
     language: en
-    docs_version: "TODO: e.g. v1.34"
-    imported_commit: "TODO"
-    imported_at: "TODO"
+    docs_version: "main@2026-07-02"
+    imported_commit: fe4bd876c5335ba137b1b564d93258c446b4b0ee
+    imported_at: "2026-07-03"
     source_url: https://kubernetes.io/docs/concepts/workloads/controllers/job/
     upstream_repo_path: content/en/docs/concepts/workloads/controllers/job.md
     local_path: docs_source/kubernetes/concepts/workloads/controllers/job.md
@@ -72,9 +72,9 @@ documents:
     category: workloads
     priority: p0
     language: en
-    docs_version: "TODO: e.g. v1.34"
-    imported_commit: "TODO"
-    imported_at: "TODO"
+    docs_version: "main@2026-07-02"
+    imported_commit: fe4bd876c5335ba137b1b564d93258c446b4b0ee
+    imported_at: "2026-07-03"
     source_url: https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/
     upstream_repo_path: content/en/docs/concepts/workloads/controllers/cron-jobs.md
     local_path: docs_source/kubernetes/concepts/workloads/controllers/cron-jobs.md
@@ -93,9 +93,9 @@ documents:
     category: workloads
     priority: p1
     language: en
-    docs_version: "TODO: e.g. v1.34"
-    imported_commit: "TODO"
-    imported_at: "TODO"
+    docs_version: "main@2026-07-02"
+    imported_commit: fe4bd876c5335ba137b1b564d93258c446b4b0ee
+    imported_at: "2026-07-03"
     source_url: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
     upstream_repo_path: content/en/docs/concepts/workloads/controllers/deployment.md
     local_path: docs_source/kubernetes/concepts/workloads/controllers/deployment.md
