@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import importlib.util
 import json
+import sys
 from pathlib import Path
 
 import pytest
@@ -10,6 +12,12 @@ from app.ingestion.markdown import read_markdown
 from app.ingestion.registry import load_registry_documents
 from app.retrieval.loader import ChunkRecord, load_chunks
 from app.retrieval.simple import retrieve
+from app.retrieval.vector import (
+    ChromaVectorRetriever,
+    SentenceTransformerEmbeddingProvider,
+    VectorRetrievalError,
+    build_vector_index,
+)
 
 
 def test_loader_reads_jsonl_chunks(tmp_path: Path) -> None:
@@ -135,6 +143,279 @@ def test_results_are_deterministic_for_ties() -> None:
     results = retrieve("pod", chunks, top_k=2)
 
     assert [result.chunk_id for result in results] == ["chunk-a", "chunk-b"]
+
+
+def test_build_vector_index_persists_local_chroma_collection(tmp_path: Path) -> None:
+    chunks = fixture_chunks()
+    persist_directory = tmp_path / "chroma"
+
+    summary = build_vector_index(
+        chunks,
+        persist_directory=persist_directory,
+        embedding_provider="hash",
+    )
+
+    assert summary["vectors_indexed"] == len(chunks)
+    assert summary["collection"] == "k8s_docs_chunks"
+    assert summary["persist_directory"] == str(persist_directory)
+    assert persist_directory.exists()
+
+
+def test_vector_retriever_returns_top_k_results_with_metadata(tmp_path: Path) -> None:
+    chunks = fixture_chunks()
+    persist_directory = tmp_path / "chroma"
+    build_vector_index(
+        chunks,
+        persist_directory=persist_directory,
+        embedding_provider="hash",
+    )
+
+    retriever = ChromaVectorRetriever(
+        persist_directory=persist_directory,
+        embedding_provider="hash",
+    )
+    results = retriever.retrieve("pending pods", chunks, top_k=2)
+
+    assert [result.chunk_id for result in results] == ["chunk-pending", "chunk-tag"]
+    assert results[0].retrieval_mode == "vector"
+    assert results[0].score > 0
+    assert results[0].title == "Pod Pending Troubleshooting"
+
+
+def test_sentence_transformer_provider_uses_document_and_query_paths(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fake_model = FakeSentenceTransformerModel()
+    module = type(
+        "SentenceTransformersModule",
+        (),
+        {"SentenceTransformer": lambda *args, **kwargs: fake_model},
+    )()
+    monkeypatch.setitem(__import__("sys").modules, "sentence_transformers", module)
+
+    provider = SentenceTransformerEmbeddingProvider(model_name="demo-model")
+    documents = provider.embed_documents(["alpha", "beta"])
+    query = provider.embed_query("gamma")
+
+    assert documents == [[1.0, 0.0], [0.0, 1.0]]
+    assert query == [1.0, 0.0]
+    assert fake_model.document_calls == ["alpha", "beta"]
+    assert fake_model.query_calls == ["gamma"]
+    assert provider.model is fake_model
+
+
+def test_sentence_transformer_provider_requires_optional_dependency(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setitem(__import__("sys").modules, "sentence_transformers", None)
+
+    provider = SentenceTransformerEmbeddingProvider(model_name="demo-model")
+    with pytest.raises(VectorRetrievalError, match="Optional dependency missing"):
+        provider.embed_query("demo")
+
+
+def test_build_vector_index_records_semantic_metadata(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fake_model = FakeSentenceTransformerModel()
+    module = type(
+        "SentenceTransformersModule",
+        (),
+        {"SentenceTransformer": lambda *args, **kwargs: fake_model},
+    )()
+    monkeypatch.setitem(__import__("sys").modules, "sentence_transformers", module)
+
+    summary = build_vector_index(
+        fixture_chunks(),
+        persist_directory=tmp_path / "chroma",
+        embedding_provider="sentence-transformers",
+        model_name="sentence-transformers/demo-model",
+    )
+
+    assert summary["embedding_provider"] == "sentence-transformers"
+    assert summary["embedding_model"] == "sentence-transformers/demo-model"
+    assert summary["embedding_dimension"] == 2
+    assert summary["distance_metric"] == "cosine"
+
+
+def test_vector_retrieval_uses_chroma_query_api_for_top_k(tmp_path: Path) -> None:
+    chunks = fixture_chunks()
+    persist_directory = tmp_path / "chroma"
+    build_vector_index(
+        chunks,
+        persist_directory=persist_directory,
+        embedding_provider="hash",
+    )
+
+    retriever = ChromaVectorRetriever(
+        persist_directory=persist_directory,
+        embedding_provider="hash",
+    )
+    results = retriever.retrieve("pending pods", chunks, top_k=1)
+
+    assert len(results) == 1
+    assert results[0].retrieval_mode == "vector"
+    assert results[0].score >= 0.0
+
+
+def test_vector_retriever_rejects_incompatible_index_provider_or_dimension(
+    tmp_path: Path,
+) -> None:
+    chunks = fixture_chunks()
+    persist_directory = tmp_path / "chroma"
+    build_vector_index(
+        chunks,
+        persist_directory=persist_directory,
+        embedding_provider="hash",
+    )
+
+    retriever = ChromaVectorRetriever(
+        persist_directory=persist_directory,
+        embedding_provider="hash",
+    )
+    retriever._provider = type(
+        "Provider",
+        (),
+        {"embed_query": lambda self, text: [0.0] * 8},
+    )()  # type: ignore[assignment]
+
+    with pytest.raises(VectorRetrievalError, match="incompatible"):
+        retriever.retrieve("pending pods", chunks, top_k=1)
+
+
+def test_vector_index_rebuild_removes_stale_chunks(tmp_path: Path) -> None:
+    persist_directory = tmp_path / "chroma"
+    build_vector_index(
+        [chunk("chunk-a", content="alpha"), chunk("chunk-b", content="beta")],
+        persist_directory=persist_directory,
+        embedding_provider="hash",
+    )
+    build_vector_index(
+        [chunk("chunk-a", content="alpha")],
+        persist_directory=persist_directory,
+        embedding_provider="hash",
+    )
+
+    retriever = ChromaVectorRetriever(
+        persist_directory=persist_directory,
+        embedding_provider="hash",
+    )
+    results = retriever.retrieve("alpha", [], top_k=5)
+
+    assert [result.chunk_id for result in results] == ["chunk-a"]
+
+
+class FakeSentenceTransformerModel:
+    def __init__(self) -> None:
+        self.document_calls: list[str] = []
+        self.query_calls: list[str] = []
+
+    def encode_document(self, text: str) -> list[float]:
+        self.document_calls.append(text)
+        if text == "alpha":
+            return [1.0, 0.0]
+        if text == "beta":
+            return [0.0, 1.0]
+        return [0.0, 0.0]
+
+    def encode_query(self, text: str) -> list[float]:
+        self.query_calls.append(text)
+        return [1.0, 0.0]
+
+
+def test_compare_retrieval_cli_accepts_embedding_provider_options(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    module_path = (
+        Path(__file__).resolve().parents[1] / "scripts" / "compare_retrieval.py"
+    )
+    spec = importlib.util.spec_from_file_location("compare_retrieval", module_path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    captured: dict[str, object] = {}
+
+    monkeypatch.setattr(module, "load_chunks", lambda path: ["chunk"])
+    monkeypatch.setattr(module, "retrieve", lambda query, chunks, top_k=3: [])
+
+    def fake_build_vector_index(chunks, **kwargs):
+        captured["build_kwargs"] = kwargs
+        return {"chunks_read": 1, "vectors_indexed": 1}
+
+    class FakeRetriever:
+        def __init__(self, **kwargs):
+            captured["retriever_kwargs"] = kwargs
+
+        def retrieve(self, query, chunks, top_k=3):
+            return []
+
+    monkeypatch.setattr(module, "build_vector_index", fake_build_vector_index)
+    monkeypatch.setattr(module, "ChromaVectorRetriever", FakeRetriever)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "compare_retrieval.py",
+            "pod pending",
+            "--top-k",
+            "2",
+            "--embedding-provider",
+            "sentence-transformers",
+            "--model-name",
+            "demo-model",
+        ],
+    )
+
+    exit_code = module.main()
+
+    assert exit_code == 0
+    assert captured["build_kwargs"]["embedding_provider"] == "sentence-transformers"
+    assert captured["build_kwargs"]["model_name"] == "demo-model"
+    assert captured["retriever_kwargs"]["embedding_provider"] == "sentence-transformers"
+    assert captured["retriever_kwargs"]["model_name"] == "demo-model"
+
+
+def test_vector_metadata_round_trip_preserves_lists_and_nullable_fields(
+    tmp_path: Path,
+) -> None:
+    chunk_record = chunk(
+        "chunk-round-trip",
+        document_id="doc-round-trip",
+        title="Round Trip",
+        heading="Round Trip > Details",
+        source_url="https://example.com/round-trip",
+        local_path="docs/round-trip.md",
+        docs_version="v1",
+        imported_commit="abc123",
+        collection_ids=["alpha", "beta"],
+        tags=["tag-a", "tag-b"],
+        category="custom",
+        priority="p1",
+        language="en",
+        content="Round trip metadata.",
+    )
+    persist_directory = tmp_path / "chroma"
+    build_vector_index(
+        [chunk_record],
+        persist_directory=persist_directory,
+        embedding_provider="hash",
+    )
+
+    retriever = ChromaVectorRetriever(
+        persist_directory=persist_directory,
+        embedding_provider="hash",
+    )
+    results = retriever.retrieve("round trip", [chunk_record], top_k=1)
+
+    assert len(results) == 1
+    assert results[0].chunk_id == "chunk-round-trip"
+    assert results[0].collection_ids == ["alpha", "beta"]
+    assert results[0].tags == ["tag-a", "tag-b"]
+    assert results[0].source_url == "https://example.com/round-trip"
+    assert results[0].docs_version == "v1"
+    assert results[0].imported_commit == "abc123"
 
 
 def test_retriever_ignores_common_question_stopwords() -> None:

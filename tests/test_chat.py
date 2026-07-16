@@ -13,6 +13,7 @@ from app.providers.mock import (
     MOCK_PROVIDER_NOTE,
     NO_CONTEXT_RESPONSE,
 )
+from app.retrieval.vector import build_vector_index
 from app.schemas import ChatRequest
 from app.services.chat import handle_chat
 
@@ -210,6 +211,78 @@ def test_chat_returns_no_sources_when_retrieval_has_no_matches(
     assert body["sources"] == []
     assert body["fallback"] is False
     assert body["error_type"] is None
+
+
+def test_chat_supports_vector_retrieval_mode(tmp_path: Path, monkeypatch) -> None:
+    chunks_path = tmp_path / "chunks.jsonl"
+    write_chunks(
+        chunks_path,
+        [
+            {
+                "chunk_id": "chunk-pending",
+                "document_id": "doc-pending",
+                "title": "Pod Pending Troubleshooting",
+                "heading": "Pod Pending Troubleshooting > Safe Triage Flow",
+                "source_url": "https://example.com/pods",
+                "local_path": "docs/pending.md",
+                "docs_version": "local",
+                "imported_commit": "abc123",
+                "collection_ids": ["pod-pending-troubleshooting"],
+                "tags": ["pod-pending", "scheduling"],
+                "category": "custom-runbook",
+                "priority": "p0",
+                "language": "en",
+                "content": "Pending Pods can wait for scheduling constraints.",
+            }
+        ],
+    )
+    persist_directory = tmp_path / "chroma"
+    build_vector_index(
+        [
+            {
+                "chunk_id": "chunk-pending",
+                "document_id": "doc-pending",
+                "title": "Pod Pending Troubleshooting",
+                "heading": "Pod Pending Troubleshooting > Safe Triage Flow",
+                "source_url": "https://example.com/pods",
+                "local_path": "docs/pending.md",
+                "docs_version": "local",
+                "imported_commit": "abc123",
+                "collection_ids": ["pod-pending-troubleshooting"],
+                "tags": ["pod-pending", "scheduling"],
+                "category": "custom-runbook",
+                "priority": "p0",
+                "language": "en",
+                "content": "Pending Pods can wait for scheduling constraints.",
+            }
+        ],
+        persist_directory=persist_directory,
+        embedding_provider="hash",
+    )
+    monkeypatch.setattr("app.services.chat.CHUNKS_PATH", chunks_path)
+    monkeypatch.setattr("app.services.chat.CHROMA_PERSIST_DIRECTORY", persist_directory)
+
+    response = client.post(
+        "/chat",
+        json={
+            "message": "Why is my pod pending scheduling?",
+            "retrieval_mode": "vector",
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["sources"][0]["chunk_id"] == "chunk-pending"
+    assert body["sources"][0]["score"] > 0
+
+
+def test_chat_rejects_invalid_retrieval_mode() -> None:
+    response = client.post(
+        "/chat",
+        json={"message": "How does HPA work?", "retrieval_mode": "invalid"},
+    )
+
+    assert response.status_code == 422
 
 
 def test_chat_rejects_empty_message() -> None:

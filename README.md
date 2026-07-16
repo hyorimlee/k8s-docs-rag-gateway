@@ -14,6 +14,7 @@ Implemented:
 * simple keyword retrieval with stopword filtering, heading/title boosts, and tag boosts
 * deterministic prompt builder with assistant boundary rules
 * provider interface and deterministic `MockLLMProvider`
+* local Chroma-backed vector retrieval with deterministic hash embeddings, an optional local semantic embedding provider, and a keyword baseline
 * `GET /health`
 * `POST /chat` using the local mock RAG-style flow
 * fallback handling for missing chunks, retrieval errors, prompt errors, provider errors, and provider timeout
@@ -29,7 +30,8 @@ Current limitations:
 
 * Real LLM generation is not implemented.
 * No external LLM APIs or provider SDKs are used.
-* Embeddings, vector DB, hybrid retrieval, and reranking are not implemented.
+* Hybrid retrieval and reranking are not implemented.
+* Vector retrieval is local-only. The default hash provider is still available for deterministic tests and CI; the optional semantic provider uses a local Sentence Transformers model and requires a local install and first-time model download. The local vector DB is persisted under artifacts/chroma/.
 * Only a curated subset of Kubernetes upstream docs is imported; this is not the full Kubernetes docs corpus.
 * The current local corpus is intentionally small: selected upstream excerpts plus custom runbooks.
 * The trace store is in-memory only and disappears on process restart.
@@ -47,7 +49,7 @@ POST /chat
 load artifacts/chunks.jsonl
   |
   v
-simple keyword retrieval
+keyword retrieval (default baseline) or vector retrieval
   |
   v
 prompt builder
@@ -130,6 +132,24 @@ python scripts/retrieve_chunks.py "How do Kubernetes Secrets work?" --top-k 3
 python scripts/retrieve_chunks.py "How do I configure a CronJob?" --top-k 3
 ```
 
+Build the local vector index:
+
+```bash
+python scripts/ingest_docs.py
+python scripts/build_vector_index.py --embedding-provider hash
+```
+
+Build a semantic index with the optional local model:
+
+```bash
+python -m pip install -r requirements-semantic.txt
+python scripts/build_vector_index.py \
+  --embedding-provider sentence-transformers \
+  --model-name sentence-transformers/multi-qa-MiniLM-L6-cos-v1
+```
+
+The vector index is stored under `artifacts/chroma/` with the default collection name `k8s_docs_chunks`.
+
 Build a structured prompt:
 
 ```bash
@@ -172,7 +192,26 @@ Check health:
 curl http://127.0.0.1:8000/health
 ```
 
-Call chat:
+Call chat with the default keyword retriever:
+
+```bash
+curl -X POST http://127.0.0.1:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message":"What should I check for a Pending Pod?","top_k":3,"retrieval_mode":"keyword"}'
+```
+
+Call chat with vector retrieval:
+
+```bash
+curl -X POST http://127.0.0.1:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message":"What should I check for a Pending Pod?","top_k":3,"retrieval_mode":"vector"}'
+```
+
+The semantic vector path uses the provider/model recorded in the active Chroma index metadata. The default hash mode remains available for deterministic local tests and CI.
+
+If the vector index is missing, `/chat` returns a clear fallback error and trace metadata.
+
 
 ```bash
 curl -X POST http://127.0.0.1:8000/chat \

@@ -54,6 +54,7 @@ class RetrievalResult:
     category: str | None = None
     priority: str | None = None
     language: str | None = None
+    retrieval_mode: str = "keyword"
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)
@@ -128,4 +129,5 @@ def _to_result(chunk: ChunkRecord, score: float) -> RetrievalResult:
         category=chunk.category,
         priority=chunk.priority,
         language=chunk.language,
+        retrieval_mode="keyword",
     )
