@@ -23,6 +23,7 @@ class ChatRequest(BaseModel):
     message: str = Field(min_length=1)
     top_k: int = Field(default=5, ge=1, le=10)
     mode: str = "mock"
+    retrieval_mode: str = Field(default="keyword")
 
 
 class TokenUsage(BaseModel):
@@ -73,6 +74,7 @@ class RetrievedChunkTrace(BaseModel):
     content: str
     docs_version: Optional[str] = None
     imported_commit: Optional[str] = None
+    retrieval_mode: str = "keyword"
 
 
 class TraceResponse(BaseModel):
@@ -89,4 +91,8 @@ class TraceResponse(BaseModel):
     latency_ms: float
     fallback: bool
     error_type: Optional[str] = None
+    retrieval_mode: str = "keyword"
+    retriever_name: str = "keyword_retriever"
+    embedding_provider: Optional[str] = None
+    embedding_model: Optional[str] = None
     created_at: datetime

@@ -213,7 +213,7 @@ The planned retrieval roadmap is:
 ```text
 simple keyword retrieval
 -> upstream docs corpus expansion
--> embedding + vector retrieval
+-> local semantic embedding + vector retrieval
 -> retrieval eval
 -> hybrid retrieval
 -> optional reranking
@@ -225,13 +225,44 @@ simple keyword retrieval
 
 ### Decision
 
-Do not add vector retrieval until after upstream docs subset import.
+For v0.5.0, use a local Chroma-backed vector store instead of a raw FAISS index because the project goal is a production-oriented RAG service gateway rather than vector search internals. Chroma provides local persistence, collection management, document storage, metadata storage, and vector search behavior that fit the service architecture. The existing deterministic keyword retriever remains the baseline for comparison and regression testing.
 
 ### Why
 
 Vector retrieval only becomes meaningful when there are enough chunks to compare semantic retrieval against keyword retrieval.
 
-The future vector pipeline should look like:
+The v0.5.0 pipeline looks like:
+
+```text
+chunks.jsonl
+-> hash embedding provider (deterministic, local, no downloads)
+-> local Chroma collection
+-> query embedding
+-> top-k vector retrieval
+-> prompt builder
+```
+
+### Limitations
+
+* vector retrieval is local-only
+* Chroma server mode is not used
+* keyword retrieval remains the default
+* deterministic hash embeddings are still used for tests and CI stability
+* the optional semantic path uses a local Sentence Transformers model and requires an explicit install/download step
+* no external embedding API
+* no real LLM provider
+* no hybrid retrieval yet
+* no reranking yet
+
+### Alternatives Considered
+
+#### External embedding API first
+
+Deferred because it introduces API keys, cost, network dependency, and CI complexity.
+
+#### Managed vector DB first
+
+Deferred because local Chroma is sufficient to validate the retrieval architecture before adding infrastructure complexity.
 
 ```text
 chunks.jsonl
@@ -247,7 +278,7 @@ chunks.jsonl
 Recommended first implementation:
 
 ```text
-sentence-transformers + FAISS
+sentence-transformers + Chroma
 ```
 
 Why:
@@ -255,11 +286,10 @@ Why:
 * local execution
 * no API key
 * no external dependency
-* good for learning embedding/vector search internals
+* good fit for this repository's local Chroma-backed retrieval architecture
 
 Later options:
 
-* Chroma
 * Qdrant
 * Pinecone
 * hybrid BM25 + vector retrieval
@@ -272,7 +302,11 @@ Deferred because it introduces API keys, cost, network dependency, and CI comple
 
 #### Managed vector DB first
 
-Deferred because local FAISS is enough to validate the retrieval architecture before adding infrastructure complexity.
+Deferred because local Chroma is sufficient to validate the retrieval architecture before adding infrastructure complexity.
+
+#### Multilingual semantic model first
+
+Deferred because this milestone is focused on English semantic search over the current Kubernetes documentation corpus and English-only queries.
 
 ---
 

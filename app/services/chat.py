@@ -8,12 +8,13 @@ from pathlib import Path
 from time import perf_counter
 from uuid import uuid4
 
-from app.config import CHUNKS_PATH, PROVIDER_TIMEOUT_SECONDS
+from app.config import CHROMA_PERSIST_DIRECTORY, CHUNKS_PATH, PROVIDER_TIMEOUT_SECONDS
 from app.prompting.builder import build_prompt
 from app.providers.base import LLMProvider, ProviderResponse, estimate_tokens
 from app.providers.mock import MockLLMProvider
 from app.retrieval.loader import ChunkRecord, load_chunks
 from app.retrieval.simple import RetrievalResult, retrieve
+from app.retrieval.vector import ChromaVectorRetriever, VectorRetrievalError
 from app.schemas import (
     ChatRequest,
     ChatResponse,
@@ -31,6 +32,13 @@ CHUNKS_NOT_FOUND_TEXT = (
 FALLBACK_TEXT_BY_ERROR_TYPE = {
     "chunks_not_found": CHUNKS_NOT_FOUND_TEXT,
     "retrieval_error": "The local retrieval step failed. Please try again later.",
+    "vector_index_not_found": (
+        "The local vector index was not found. Build it with "
+        "scripts/build_vector_index.py first."
+    ),
+    "vector_retrieval_error": (
+        "The local vector retrieval step failed. Please try again later."
+    ),
     "prompt_build_error": "The prompt builder failed. Please try again later.",
     "provider_error": "The mock provider failed. Please try again later.",
     "provider_timeout": "The mock provider timed out. Please try again later.",
@@ -75,10 +83,27 @@ def handle_chat(
         )
 
     try:
-        if retriever is None:
+        if request.retrieval_mode == "vector":
+            vector_retriever = ChromaVectorRetriever(
+                persist_directory=CHROMA_PERSIST_DIRECTORY,
+            )
+            retrieved_chunks = vector_retriever.retrieve(
+                request.message,
+                chunks,
+                top_k=request.top_k,
+            )
+        elif retriever is None:
             retrieved_chunks = retrieve(request.message, chunks, top_k=request.top_k)
         else:
             retrieved_chunks = retriever(request.message, chunks)
+    except VectorRetrievalError as exc:
+        return _fallback_response(
+            request_id=request_id,
+            question=request.message,
+            latency_ms=_elapsed_ms(started_at),
+            error_type=exc.error_type,
+            retrieved_chunks=[],
+        )
     except Exception:
         return _fallback_response(
             request_id=request_id,
@@ -140,11 +165,29 @@ def handle_chat(
         fallback=False,
         error_type=None,
     )
+    embedding_provider = None
+    embedding_model = None
+    if request.retrieval_mode == "vector":
+        vector_retriever = ChromaVectorRetriever(
+            persist_directory=CHROMA_PERSIST_DIRECTORY,
+        )
+        metadata = vector_retriever._store.collection.metadata or {}
+        embedding_provider = str(metadata.get("embedding_provider") or "") or None
+        embedding_model = str(metadata.get("embedding_model") or "") or None
+
     _save_trace(
         response=response,
         question=request.message,
         retrieved_chunks=retrieved_chunks,
         prompt=prompt,
+        retrieval_mode=request.retrieval_mode,
+        retriever_name=(
+            "vector_retriever"
+            if request.retrieval_mode == "vector"
+            else "keyword_retriever"
+        ),
+        embedding_provider=embedding_provider,
+        embedding_model=embedding_model,
     )
     return response
 
@@ -181,6 +224,10 @@ def _fallback_response(
         question=question,
         retrieved_chunks=retrieved_chunks or [],
         prompt=prompt,
+        retrieval_mode="keyword",
+        retriever_name="keyword_retriever",
+        embedding_provider=None,
+        embedding_model=None,
     )
     return response
 
@@ -211,6 +258,7 @@ def _to_trace_chunk(result: RetrievalResult) -> RetrievedChunkTrace:
         content=result.content,
         docs_version=result.docs_version,
         imported_commit=result.imported_commit,
+        retrieval_mode=result.retrieval_mode,
     )
 
 
@@ -220,6 +268,10 @@ def _save_trace(
     question: str,
     retrieved_chunks: list[RetrievalResult],
     prompt: str,
+    retrieval_mode: str,
+    retriever_name: str,
+    embedding_provider: str | None,
+    embedding_model: str | None,
 ) -> None:
     save_trace(
         TraceResponse(
@@ -234,6 +286,10 @@ def _save_trace(
             latency_ms=response.latency_ms,
             fallback=response.fallback,
             error_type=response.error_type,
+            retrieval_mode=retrieval_mode,
+            retriever_name=retriever_name,
+            embedding_provider=embedding_provider,
+            embedding_model=embedding_model,
             created_at=datetime.now(timezone.utc),
         )
     )

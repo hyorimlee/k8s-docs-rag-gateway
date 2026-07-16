@@ -24,6 +24,8 @@ def health() -> HealthResponse:
 @app.post("/chat", response_model=ChatResponse)
 def chat(request: ChatRequest) -> ChatResponse:
     """Run the local mock RAG-style chat flow."""
+    if request.retrieval_mode not in {"keyword", "vector"}:
+        raise HTTPException(status_code=422, detail="Invalid retrieval_mode")
     return handle_chat(request)
 
 
